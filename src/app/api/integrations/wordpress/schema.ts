@@ -2,8 +2,8 @@ import { z } from "zod";
 
 export const WordPressPostSchema = z.object({
   siteUrl: z
-    .string()
-    .url("Invalid site URL format. Must be a valid URL (e.g., https://yourblog.com)"),
+    .string(),
+    // .url("Invalid site URL format. Must be a valid URL (e.g., http://test.localite.io)"),
   
   username: z
     .string()
@@ -18,8 +18,8 @@ export const WordPressPostSchema = z.object({
     .min(5, "Title must be at least 5 characters"),
 
   content: z
-    .string()
-    .min(100, "Content must be at least 100 characters"),
+    .string(),
+    // .min(100, "Content must be at least 100 characters"),
 
   slug: z
     .string()
@@ -32,6 +32,10 @@ export const WordPressPostSchema = z.object({
     .string()
     .max(160, "Meta description must be 160 characters or less")
     .optional(),
+
+  // ✅ Added support for tags and categories
+  tags: z.array( z.string()).optional(),
+  categories: z.array( z.string()).optional(),
 });
 
 export type WordPressPostInput = z.infer<typeof WordPressPostSchema>;

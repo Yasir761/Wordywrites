@@ -1,62 +1,86 @@
 "use client"
 
+import { useEffect, useState, useCallback } from "react"
 import { motion } from "framer-motion"
 import { CalendarIcon, PlusIcon } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import Link from "next/link"
 
-const mockBlogs = [
-  {
-    id: "1",
-    title: "Top 10 SEO Tools for Startups",
-    status: "Published",
-    wordCount: 1320,
-    createdAt: "2025-07-01",
-  },
-  {
-    id: "2",
-    title: "How to Write a Blog with SEOgenie",
-    status: "Draft",
-    wordCount: 820,
-    createdAt: "2025-07-06",
-  },
-  {
-    id: "3",
-    title: "AI vs Human Writers: The Future of Content",
-    status: "Published",
-    wordCount: 2100,
-    createdAt: "2025-06-29",
-  },
-]
+type Blog = {
+  _id: string
+  title: string
+  createdAt: string
+  wordCount: number
+  status: "Published" | "Draft"
+}
 
 export default function BlogsPage() {
+  const [blogs, setBlogs] = useState<Blog[]>([])
+
+  // --- Normalize blogs so we can reuse it for both initial fetch and new blogs ---
+  const normalizeBlogs = useCallback((data: any[]) => {
+    return data.map((b: any) => {
+      const blogContent = b?.blogAgent?.blog || ""
+      const plainText = blogContent.replace(/[#_*~`>!-]/g, "").trim()
+      const wordCount =
+        b?.blogAgent?.wordCount ||
+        plainText.split(/\s+/).filter(Boolean).length
+      const titleMatch = blogContent.match(/^\s*#\s+(.*)/m)
+
+      return {
+        _id: b._id,
+        title: titleMatch?.[1]?.trim() || b?.blogAgent?.keyword || "Untitled",
+        createdAt: b.createdAt?.slice(0, 10) || "N/A",
+        wordCount,
+        status: b.status === "published" ? "Published" as const : "Draft" as const,
+      }
+    })
+  }, [])
+
+  // --- Fetch blogs from API on mount ---
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      const res = await fetch("/api/createdBlogs")
+      if (!res.ok) return
+      const data = await res.json()
+      setBlogs(normalizeBlogs(data) as Blog[])
+    }
+    fetchBlogs()
+  }, [normalizeBlogs])
+
+  // --- Function to add a new blog instantly ---
+  const addNewBlog = (newBlog: any) => {
+    setBlogs((prev) => [normalizeBlogs([newBlog])[0], ...prev])
+  }
+
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
           Your Blogs
         </h1>
-        <Button className="gap-1">
-          <PlusIcon className="size-4" />
-          Create New
-        </Button>
+        <Link
+          href={{
+            pathname: "/dashboard/create",
+            query: { onSuccess: "true" }, // optional if you want to signal callback
+          }}
+          className="inline-flex items-center"
+        >
+          <Button className="gap-1">
+            <PlusIcon className="size-4" />
+            Create New
+          </Button>
+        </Link>
       </div>
 
       <Separator className="bg-gradient-to-r from-purple-500/40 to-cyan-500/40" />
 
-      {/* Blog Cards Grid */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {mockBlogs.map((blog, index) => (
+        {blogs.map((blog, index) => (
           <motion.div
-            key={blog.id}
+            key={blog._id}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, duration: 0.5 }}
@@ -69,12 +93,6 @@ export default function BlogsPage() {
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
                 <div className="flex items-center justify-between">
-                  <Badge
-                    variant={blog.status === "Published" ? "default" : "outline"}
-                    className="text-xs px-2 py-0.5 rounded-full"
-                  >
-                    {blog.status}
-                  </Badge>
                   <span className="flex items-center gap-1 text-xs">
                     <CalendarIcon className="w-4 h-4 opacity-70" />
                     {blog.createdAt}

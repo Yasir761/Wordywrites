@@ -1,7 +1,7 @@
 import OverviewCards from "./components/OverviewCards"
 import UsageChart from "./components/UsageChart"
 import RecentBlogs from "./components/RecentBlogs"
-import IntegrationPanel from "./components/IntegrationPanel"
+import SmartTools from "./components/SmartTools"
 import AIAgentsPanel from "./components/AiAgents"
 
 export default function DashboardPage() {
@@ -11,7 +11,7 @@ export default function DashboardPage() {
       <UsageChart />
       <RecentBlogs />
       <AIAgentsPanel />
-      <IntegrationPanel />
+      <SmartTools />
     </div>
   )
 }

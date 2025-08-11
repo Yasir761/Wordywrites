@@ -6,25 +6,22 @@ import {
   splitTextByTokenLimit
 } from "@/app/api/utils/tokenUtils"
 import { connectDB } from "@/app/api/utils/db"
-import { UserModel } from "@/app/models/user"
-import { checkAndConsumeCredit } from "@/app/api/utils/useCredits"
 
 const MAX_TOKENS = 2000
 
 export async function POST(req: NextRequest) {
-  const { keyword, email } = await req.json()
+  const { keyword } = await req.json()
 
-  if (!keyword || !email) {
-    return NextResponse.json({ error: "Missing keyword or email" }, { status: 400 })
+  if (!keyword) {
+    return NextResponse.json({ error: "Missing keyword" }, { status: 400 })
   }
 
   try {
     await connectDB()
 
-    // 🔐 Enforce plan and consume credit if needed
-    await checkAndConsumeCredit(email, { allowOnly: ["Starter", "Pro"] }) // <-- handles Pro bypass and Free/Starter enforcement
+    // 🔓 Skipping credit and plan checks for now
+    // await checkAndConsumeCredit(email, { allowOnly: ["Starter", "Pro"] })
 
-    // 🔍 Fetch SERP data via SerpAPI (only used after credit check)
     const serpRes = await fetch(
       `https://serpapi.com/search.json?q=${encodeURIComponent(keyword)}&api_key=${process.env.SERP_API_KEY}`
     )
@@ -36,7 +33,6 @@ export async function POST(req: NextRequest) {
 
     const organicResults = serpJson.organic_results.slice(0, 5)
 
-    // 🧠 Create prompt
     const prompt = createPrompt(keyword, organicResults)
 
     if (!isWithinTokenLimit(prompt, MAX_TOKENS)) {
@@ -48,7 +44,6 @@ export async function POST(req: NextRequest) {
       }, { status: 413 })
     }
 
-    // 🤖 Call Groq for AI completion
     const aiRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {

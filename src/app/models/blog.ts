@@ -1,61 +1,77 @@
 import mongoose from "mongoose";
 
+
+
+const TeaserAgentSchema = new mongoose.Schema(
+  {
+    teasers: { type: [String], default: [] },
+    hashtags: { type: [String], default: [] },
+    engagementCTA: { type: String, default: "" },
+  },
+  { _id: false } // Prevents Mongoose from generating an _id for the subdocument
+);
+
+
+
+
 const BlogSchema = new mongoose.Schema({
-  keyword: {
+  userId: { type: String, required: false },
+
+  keywordAgent: {
+    keyword: { type: String, required: true },
+    intent: { type: String, required: true },
+  },
+
+  toneAgent: {
+    tone: { type: String, required: true },
+    voice: { type: String, required: true },
+  },
+
+  blueprintAgent: {
+    outline: { type: [String], required: true },
+  },
+
+  seoAgent: {
+    optimized_title: { type: String, required: true },
+    meta_description: { type: String, required: true },
+    slug: { type: String, required: true },
+    final_hashtags: { type: [String], required: true },
+    seo_score: { type: Number, min: 0, max: 100, required: true },
+  },
+
+  blogAgent: {
+    blog: { type: String, required: true },
+    keyword: { type: String },
+    wordCount: { type: Number, required: true  },
+  },
+
+  analyzeAgent: {
+    top_keywords: { type: [String] },
+    avg_word_count: { type: Number },
+    competitors: { type: [String] },
+  },
+
+  crawlAgent: {
+    urls: { type: [String] },
+    extracted_texts: { type: [String] },
+  },
+
+  // NEW: Teaser Agent
+ teaserAgent: TeaserAgentSchema,
+
+  status: {
     type: String,
-    required: true,
+    enum: ["draft", "published"],
+    default: "draft",
   },
-  intent: {
-    type: String,
-    required: true,
-  },
-  tone: {
-    type: String,
-    required: true,
-  },
-  voice: {
-    type: String,
-    required: true,
-  },
-  outline: {
-    type: [String], // optional: if outline is in array format
-    required: true,
-  },
-  tags: {
-    type: [String],
-    required: true,
-  },
-  seo: {
-    optimized_title: {
-      type: String,
-      required: true,
-    },
-    meta_description: {
-      type: String,
-      required: true,
-    },
-    slug: {
-      type: String,
-      required: true,
-    },
-    final_hashtags: {
-      type: [String],
-      required: true,
-    },
-  },
-  blog: {
-    type: String,
-    required: true,
-  },
-  userId: {
-    type: String,
-    required: false, // for logged-in user (optional)
-  },
+
   createdAt: {
     type: Date,
     default: Date.now,
-  }
+  },
 });
 
-// Prevent model overwrite issues in dev
-export const BlogModel = mongoose.models.Blog || mongoose.model("Blog", BlogSchema);
+
+delete mongoose.models.Blog;
+export const BlogModel =
+  mongoose.models.Blog || mongoose.model("Blog", BlogSchema);

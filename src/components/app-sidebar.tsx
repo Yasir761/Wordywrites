@@ -2,11 +2,10 @@
 
 import {
   IconLayoutDashboard,
-  IconSettings,
-  IconPlug,
-  IconFileText,
-  IconBook,
-  IconHelp,
+  IconEdit,
+  IconNotebook,
+  IconUpload,
+  IconSearch,
 } from "@tabler/icons-react"
 
 import { useUser } from "@clerk/nextjs"
@@ -35,31 +34,36 @@ const sidebarConfig = {
     {
       title: "Generate Blog",
       url: "/dashboard/create",
-      icon: IconFileText,
+      icon: IconEdit,
     },
     {
       title: "Your Blogs",
       url: "/dashboard/blogs",
-      icon: IconBook,
+      icon: IconNotebook,
     },
     {
-      title: "Integrations",
-      url: "/dashboard/integrations",
-      icon: IconPlug,
+      title: "Publish to wordpress",
+      url: "/dashboard/wordpress",
+      icon: IconUpload,
+    },
+    {
+      title: "Crawl & Enhance",
+      url: "/dashboard/crawl",
+      icon: IconSearch,
     },
   ],
-  navFooter: [
-    {
-      title: "Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Settings",
-      url: "/dashboard/settings",
-      icon: IconSettings,
-    },
-  ],
+  // navFooter: [
+  //   {
+  //     title: "Help",
+  //     url: "#",
+  //     icon: IconHelp,
+  //   },
+  //   {
+  //     title: "Settings",
+  //     url: "/dashboard/settings",
+  //     icon: IconSettings,
+  //   },
+  // ],
 }
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
@@ -103,7 +107,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       {/* Footer */}
       <SidebarFooter className="border-t border-white/20 pt-3 mt-4">
         <SidebarMenu>
-          {sidebarConfig.navFooter.map((item, i) => (
+          {/* {sidebarConfig.navFooter.map((item, i) => (
             <SidebarMenuItem key={i}>
               <SidebarMenuButton asChild>
                 <Link
@@ -115,7 +119,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          ))}
+          ))} */}
         </SidebarMenu>
 
         <div className="mt-4">

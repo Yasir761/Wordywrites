@@ -97,7 +97,7 @@ export function NavUser({
 
             <DropdownMenuSeparator className="bg-gray-200" />
 
-            <DropdownMenuGroup>
+            {/* <DropdownMenuGroup>
               <DropdownMenuItem className="hover:bg-purple-50/80 transition">
                 <IconUserCircle className="size-4 mr-2 text-purple-500" />
                 Account
@@ -110,7 +110,7 @@ export function NavUser({
                 <IconNotification className="size-4 mr-2 text-cyan-500" />
                 Notifications
               </DropdownMenuItem>
-            </DropdownMenuGroup>
+            </DropdownMenuGroup> */}
 
             <DropdownMenuSeparator className="bg-gray-200" />
 

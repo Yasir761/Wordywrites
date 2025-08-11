@@ -1,42 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { checkAndConsumeCredit } from "@/app/api/utils/useCredits";
+// import { checkAndConsumeCredit } from "@/app/api/utils/useCredits";
 import { publishBlogToWordPress } from "../publish";
-import { WordPressPostInput, WordPressPostSchema } from "../schema";
+import { WordPressPostSchema } from "../schema";
+// import { connectDB } from "@/app/api/utils/db";
 
+
+//  await connectDB(); 
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
-  // ✅ Validate schema
+  // Remove spaces from application password before validation
+  if (body.applicationPassword) {
+    body.applicationPassword = body.applicationPassword.replace(/\s+/g, "");
+  }
+
+  // Validate input
   const validated = WordPressPostSchema.safeParse(body);
   if (!validated.success) {
-    return NextResponse.json({ error: "Invalid input", issues: validated.error.flatten() }, { status: 400 });
+    console.error("❌ Validation issues:", validated.error.format());
+    return NextResponse.json(
+      {
+        error: "Invalid input",
+        issues: validated.error.format(),
+      },
+      { status: 400 }
+    );
   }
 
   try {
-    // ✅ Clerk auth
     const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const userRes = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
-      },
+      headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
     });
-
     const user = await userRes.json();
     const email = user?.email_addresses?.[0]?.email_address;
-    if (!email) return NextResponse.json({ error: "Email not found" }, { status: 403 });
+    if (!email) {
+      return NextResponse.json({ error: "Email not found" }, { status: 403 });
+    }
 
-    // ✅ Enforce plan access: Starter & Pro only
-    await checkAndConsumeCredit(email, { allowOnly: ["Starter", "Pro"] });
+    // await checkAndConsumeCredit(email, { allowOnly: ["Starter", "Pro"] });
 
-    // ✅ Publish to WordPress
+    // Publish as draft
     const result = await publishBlogToWordPress(validated.data);
 
-    return NextResponse.json({ success: true, result });
+    // Build edit link (WordPress dashboard)
+    const editLink = `${validated.data.siteUrl.replace(/\/$/, "")}/wp-admin/post.php?post=${result.id}&action=edit`;
+
+    return NextResponse.json({
+      success: true,
+      editLink,
+      result,
+    });
   } catch (err: any) {
     console.error("💥 WordPress Export Error:", err);
-    return NextResponse.json({ error: "Failed to export to WordPress", detail: err?.message || err }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Failed to export to WordPress",
+        detail: err?.message || err,
+      },
+      { status: 500 }
+    );
   }
 }

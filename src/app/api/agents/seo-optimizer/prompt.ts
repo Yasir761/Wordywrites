@@ -23,13 +23,16 @@ Requirements:
 - Meta Description: Summarize the blog clearly, 140–160 characters.
 - Slug: Lowercase, hyphen-separated, no special characters or stop words.
 - Final Hashtags: Pick the most relevant 3–5 from suggestions or generate new ones. Must start with "#".
+- SEO Score: Return a number between 0–100 representing how strong the metadata is for SEO (based on keyword inclusion, clarity, relevance, and character limits).
 
 Only return a valid JSON in this format:
 {
   "optimized_title": "Your perfect SEO blog title",
   "meta_description": "Your perfect meta description",
   "slug": "seo-blog-example",
-  "final_hashtags": ["#SEO", "#BlogWriting", "#AIContent"]
+  "final_hashtags": ["#SEO", "#BlogWriting", "#AIContent"],
+  "seo_score": 87
+
 }
 
 Do not include explanation. Respond with JSON only.

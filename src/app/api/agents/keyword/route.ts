@@ -1,4 +1,4 @@
-// File: app/api/agents/keyword/route.ts
+
 
 import { NextRequest, NextResponse } from "next/server";
 import { createPrompt } from "./prompt";

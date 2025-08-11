@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     // 🧠 Create prompt
     const prompt = createPrompt(keyword, outline, tone, voice, tags);
 
-    // 🤖 Call OpenAI
+    // 🤖 Call OpenAIa
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {

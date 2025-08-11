@@ -1,34 +1,35 @@
-import { NextRequest, NextResponse } from "next/server"
-import { createPrompt } from "./prompt"
-import { BlogOutputSchema } from "./schema"
+import { NextRequest, NextResponse } from "next/server";
+import { createPrompt } from "./prompt";
+import { BlogOutputSchema } from "./schema";
 import {
   countTokens,
   isWithinTokenLimit,
   splitTextByTokenLimit,
-} from "@/app/api/utils/tokenUtils"
-import { connectDB } from "@/app/api/utils/db"
-import { checkAndConsumeCredit } from "@/app/api/utils/useCredits"
+} from "@/app/api/utils/tokenUtils";
+import { connectDB } from "@/app/api/utils/db";
+import { checkAndConsumeCredit } from "@/app/api/utils/useCredits";
 
-const MAX_TOKENS = 2048
+const MAX_TOKENS = 2048;
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { keyword, outline, tone, seo } = body
+  const body = await req.json();
+  const { keyword, outline, tone, seo } = body;
 
   if (
     !keyword ||
     !outline ||
     !tone ||
     !seo?.optimized_title ||
-    !seo?.meta_description
+    !seo?.meta_description ||
+    typeof seo?.seo_score !== "number"
   ) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   try {
     // 🔗 Connect and check credit access
-    await connectDB()
-    // await checkAndConsumeCredit(email, { allowOnly: ["Starter", "Pro"] }) // handles Free, Starter, Pro
+    await connectDB();
+    // await checkAndConsumeCredit(email, { allowOnly: ["Starter", "Pro"] });
 
     // ✨ Create AI-Powered prompt
     const prompt = createPrompt({
@@ -38,29 +39,30 @@ export async function POST(req: NextRequest) {
       voice: body.voice || "",
       title: seo.optimized_title,
       meta: seo.meta_description,
-    })
+    });
 
     // 🚀 Token safety check
     if (!isWithinTokenLimit(prompt, MAX_TOKENS)) {
-      const chunks = splitTextByTokenLimit(prompt, MAX_TOKENS)
+      const chunks = splitTextByTokenLimit(prompt, MAX_TOKENS);
       if (chunks.length === 0) {
         return NextResponse.json(
           { error: "Prompt too long and could not be split." },
           { status: 500 }
-        )
+        );
       }
 
       return NextResponse.json(
         {
-          warning: "Prompt was too long and has been trimmed. Please shorten input or upgrade your plan.",
+          warning:
+            "Prompt was too long and has been trimmed. Please shorten input or upgrade your plan.",
           trimmedPrompt: chunks[0],
           tokens: countTokens(chunks[0]),
         },
         { status: 413 }
-      )
+      );
     }
 
-    // 🎯 Generate with OpenAI
+    // 🎯 Generate blog content with OpenAI
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -83,15 +85,16 @@ export async function POST(req: NextRequest) {
         temperature: 0.5,
         max_tokens: MAX_TOKENS,
       }),
-    })
+    });
 
-    const data = await response.json()
-    const blog = data.choices?.[0]?.message?.content?.trim()
+    const data = await response.json();
+    const blog = data.choices?.[0]?.message?.content?.trim();
+    const wordCount = blog ? blog.split(/\s+/).length : 0;
 
-    console.log("📨 Full OpenAI response:", JSON.stringify(data, null, 2))
+    console.log("📨 Full OpenAI response:", JSON.stringify(data, null, 2));
 
     // 🔍 Validate output schema
-    const result = BlogOutputSchema.safeParse({ blog, keyword })
+    const result = BlogOutputSchema.safeParse({ blog, keyword, wordCount });
 
     if (!result.success) {
       return NextResponse.json(
@@ -100,14 +103,23 @@ export async function POST(req: NextRequest) {
           error: "Output schema invalid",
           issues: result.error.flatten(),
           raw: blog,
+          wordCount,
         },
         { status: 422 }
-      )
+      );
     }
 
-    return NextResponse.json(result.data)
+    // ✅ Return blog + wordCount + seo (including seo_score)
+    return NextResponse.json({
+      ...result.data,
+      seo,        // pass through SEO agent object
+      wordCount,  // explicitly include word count
+    });
   } catch (err: any) {
-    console.error("❌ Blog Agent Error:", err)
-    return NextResponse.json({ error: err.message || "Internal error" }, { status: 500 })
+    console.error("❌ Blog Agent Error:", err);
+    return NextResponse.json(
+      { error: err.message || "Internal error" },
+      { status: 500 }
+    );
   }
 }

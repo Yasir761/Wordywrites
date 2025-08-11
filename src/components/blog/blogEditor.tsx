@@ -93,9 +93,9 @@ export default function BlogEditor({
       <EditorContent editor={editor} />
 
       {/* Save */}
-      <Button className="mt-6" onClick={() => onSave(editor.getHTML())}>
+      {/* <Button className="mt-6" onClick={() => onSave(editor.getHTML())}>
         Save Blog
-      </Button>
+      </Button> */}
     </div>
   )
 }

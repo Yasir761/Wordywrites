@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   Table,
   TableHeader,
@@ -8,38 +8,75 @@ import {
   TableHead,
   TableBody,
   TableCell,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { motion } from "framer-motion"
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { motion } from "framer-motion";
 
-const allBlogs = [
-  { id: "1", title: "Top SEO Tips", date: "Jul 6", exported: true, integration: "WordPress" },
-  { id: "2", title: "How to Rank #1", date: "Jul 5", exported: false, integration: "-" },
-  { id: "3", title: "Content Strategies", date: "Jul 4", exported: true, integration: "Medium" },
-  { id: "4", title: "Keyword Guide", date: "Jul 3", exported: false, integration: "-" },
-  { id: "5", title: "Backlink Basics", date: "Jul 2", exported: true, integration: "WordPress" },
-  { id: "6", title: "SERP Optimization", date: "Jul 1", exported: false, integration: "-" },
-  { id: "7", title: "Schema SEO", date: "Jun 30", exported: true, integration: "Medium" },
-]
-
-const ITEMS_PER_PAGE = 5
+const ITEMS_PER_PAGE = 5;
 
 export default function RecentBlogs() {
-  const [page, setPage] = React.useState(0)
+  const [blogs, setBlogs] = React.useState<any[]>([]);
+  const [page, setPage] = React.useState(0);
+  const [totalPages, setTotalPages] = React.useState(1);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState("");
 
-  const paginatedBlogs = allBlogs.slice(
-    page * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE + ITEMS_PER_PAGE
-  )
+  React.useEffect(() => {
+    const fetchBlogs = async () => {
+      setLoading(true);
+      setError("");
+      try {
+    const res = await fetch(`/api/createdBlogs?page=${page}`);
+        if (!res.ok) throw new Error("Failed to fetch blogs");
+        const data = await res.json();
+        console.log("API response:", data);
+        setBlogs(Array.isArray(data) ? data : []);
+        setTotalPages(data.totalPages || 1);
+      } catch (err: any) {
+        setError(err.message || "Something went wrong");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBlogs();
+  }, [page]);
 
-  const totalPages = Math.ceil(allBlogs.length / ITEMS_PER_PAGE)
+  // Handle Publish
+const handlePublish = (blog: any) => {
+  const content =
+    blog.blogAgent?.content ||
+    blog.blogAgent?.blog ||
+    blog.blog ||
+    "";
+
+  if (!content.trim()) {
+    console.log("Publishing blog:", blog);
+    console.log("Blog content length:", content.length);
+    alert("Blog content is missing. Please regenerate or fetch full content.");
+    return;
+  }
+
+  const blogData = {
+    title: blog.seoAgent?.optimized_title || blog.title || "Untitled",
+    content,
+    tone: blog.toneAgent?.tone || "Neutral",
+    wordCount: blog.blogAgent?.wordCount || content.split(/\s+/).length,
+    ...blog,
+  };
+
+  localStorage.setItem("blogData", JSON.stringify(blogData));
+  window.location.assign("/dashboard/wordpress");
+};
+
+
 
   return (
     <Card className="w-full mt-10 border border-white/30 bg-white/70 backdrop-blur-md shadow-md rounded-2xl">
@@ -51,84 +88,106 @@ export default function RecentBlogs() {
 
       <CardContent className="px-0 pt-0 overflow-x-auto">
         <div className="relative">
-          <div className="overflow-auto max-h-[320px]">
-            <Table className="min-w-[700px]">
-              <TableHeader className="sticky top-0 z-10 bg-white/70 backdrop-blur-md border-b border-white/20">
-                <TableRow>
-                  {["Title", "Date", "Exported", "Integration"].map((col, i) => (
-                    <TableHead
-                      key={i}
-                      className="text-xs uppercase font-semibold text-gray-500 tracking-wider"
-                    >
-                      {col}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
+          {loading ? (
+            <Skeleton className="w-full h-[280px] rounded-xl bg-gray-100/40 animate-pulse" />
+          ) : error ? (
+            <div className="flex items-center justify-center h-[280px] text-red-500 text-sm">
+              {error}
+            </div>
+          ) : blogs.length === 0 ? (
+            <div className="flex items-center justify-center h-[280px] text-gray-500 text-sm">
+              No blogs found.
+            </div>
+          ) : (
+            <>
+              <div className="overflow-auto max-h-[320px]">
+                <Table className="min-w-[700px]">
+                  <TableHeader className="sticky top-0 z-10 bg-white/70 backdrop-blur-md border-b border-white/20">
+                    <TableRow>
+                      {["Title", "Date", "Tone", "Word Count", "Actions"].map((col, i) => (
+                        <TableHead
+                          key={i}
+                          className="text-xs uppercase font-semibold text-gray-500 tracking-wider"
+                        >
+                          {col}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
 
-              <TableBody>
-                {paginatedBlogs.map((blog, i) => (
-                  <motion.tr
-                    key={blog.id}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() =>
-                      window.location.assign(`/dashboard/blogs/${blog.id}`)
-                    }
-                    className="cursor-pointer group transition-all duration-200 hover:bg-gradient-to-r from-white/60 via-purple-50/30 to-cyan-50/30 backdrop-blur hover:shadow-sm"
-                  >
-                    <TableCell className="font-medium text-gray-800 group-hover:underline">
-                      {blog.title}
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {blog.date}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={blog.exported ? "default" : "secondary"}
-                        className="text-xs font-medium"
+                  <TableBody>
+                    {blogs.map((blog, i) => (
+                      <motion.tr
+                        key={blog._id}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="group transition-all duration-200 hover:bg-gradient-to-r from-white/60 via-purple-50/30 to-cyan-50/30 backdrop-blur hover:shadow-sm"
                       >
-                        {blog.exported ? "Yes" : "No"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {blog.integration !== "-" ? (
-                        <Badge variant="outline" className="text-xs font-medium">
-                          {blog.integration}
-                        </Badge>
-                      ) : (
-                        <span className="text-sm text-gray-500">-</span>
-                      )}
-                    </TableCell>
-                  </motion.tr>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                        {/* Title as plain text */}
+                        <TableCell className="font-medium text-gray-800">
+                          {blog.seoAgent?.optimized_title || blog.title || "Untitled Blog"}
+                        </TableCell>
 
-          <div className="flex items-center justify-end gap-2 px-4 py-4 border-t border-white/20 bg-white/60 backdrop-blur">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="transition-colors"
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              className="transition-colors"
-            >
-              Next
-            </Button>
-          </div>
+                        {/* Date */}
+                        <TableCell className="text-sm text-gray-600">
+                          {new Date(blog.createdAt).toLocaleDateString()}
+                        </TableCell>
+
+                        {/* Tone */}
+                        <TableCell>
+                          <Badge className="text-xs font-medium border bg-blue-100 text-blue-700 border-blue-300">
+                            {blog.toneAgent?.tone || "Neutral"}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Word Count */}
+                        <TableCell>
+                          <span className="text-sm text-gray-700">
+                            {blog.blogAgent?.wordCount || 0} words
+                          </span>
+                        </TableCell>
+
+                        {/* Single Action: Publish */}
+                        <TableCell className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handlePublish(blog)}
+                            className="text-xs"
+                          >
+                            Publish to WordPress
+                          </Button>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              <div className="flex items-center justify-end gap-2 px-4 py-4 border-t border-white/20 bg-white/60 backdrop-blur">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 0}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages - 1}
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

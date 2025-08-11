@@ -10,7 +10,9 @@ export const SEOOptimizerSchema = z.object({
     .regex(/^[a-z0-9-]+$/, "Slug must be lowercase, hyphen-separated"),
   final_hashtags: z.array(
     z.string().startsWith("#")
-  ).min(3).max(5)
+  ).min(3).max(5),
+
+  seo_score: z.number().min(0).max(100).optional()
 });
 
 export type SEOOptimizerResult = z.infer<typeof SEOOptimizerSchema>;

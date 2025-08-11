@@ -1,11 +1,11 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import {
   IconArticle,
   IconWriting,
   IconStar,
 } from "@tabler/icons-react"
-
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -14,37 +14,79 @@ import {
   CardDescription,
   CardFooter,
 } from "@/components/ui/card"
-
 import { motion } from "framer-motion"
 
-const stats = [
+
+
+export default function OverviewCards() {
+  const [stats, setStats] = useState([
+    {
+      label: "Blogs Created",
+      value: 0,
+      icon: IconArticle,
+      trend: "+0%",
+      description: "New blogs this month",
+      direction: "up",
+    },
+    {
+      label: "Words Written",
+      value: "0",
+      icon: IconWriting,
+      trend: "+0%",
+      description: "Word count across all blogs",
+      direction: "up",
+    },
+    {
+      label: "Avg SEO Score",
+      value: "0%",
+      icon: IconStar,
+      trend: "+0%",
+      description: "Improved SEO performance",
+      direction: "up",
+    },
+  ])
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch("/api/user/stats")
+        const data = await res.json()
+
+     setStats([
   {
     label: "Blogs Created",
-    value: 24,
+    value: data.blogCount,
     icon: IconArticle,
-    trend: "+12%",
-    description: "New blogs this month",
-    direction: "up",
+    trend: `${data.trends.blogs >= 0 ? "+" : ""}${data.trends.blogs}%`,
+    description: "Total number of blogs",
+    direction: data.trends.blogs >= 0 ? "up" : "down",
   },
   {
     label: "Words Written",
-    value: "18.2k",
+    value: data.totalWords.toLocaleString(),
     icon: IconWriting,
-    trend: "+8.5%",
+    trend: `${data.trends.words >= 0 ? "+" : ""}${data.trends.words}%`,
     description: "Word count across all blogs",
-    direction: "up",
+    direction: data.trends.words >= 0 ? "up" : "down",
   },
   {
     label: "Avg SEO Score",
-    value: "89%",
+    value: `${data.avgSEO}%`,
     icon: IconStar,
-    trend: "+4%",
+    trend: `${data.trends.seo >= 0 ? "+" : ""}${data.trends.seo}%`,
     description: "Improved SEO performance",
-    direction: "up",
+    direction: data.trends.seo >= 0 ? "up" : "down",
   },
-]
+]);
 
-export default function OverviewCards() {
+      } catch (err) {
+        console.error("Failed to load stats:", err)
+      }
+    }
+
+    fetchStats()
+  }, [])
+
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 px-4 xl:px-6 mt-8">
       {stats.map((stat, i) => {
@@ -62,19 +104,16 @@ export default function OverviewCards() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Card
-              className="relative overflow-hidden rounded-2xl border border-white/30 bg-white/70 backdrop-blur-md shadow-sm transition-all hover:shadow-xl hover:scale-[1.015]"
-            >
-              {/* Gradient shimmer background */}
+            <Card className="relative overflow-hidden rounded-2xl border border-white/30 bg-white/70 backdrop-blur-md shadow-sm transition-all hover:shadow-xl hover:scale-[1.015]">
               <div className="absolute inset-0 z-0 pointer-events-none opacity-0 group-hover:opacity-100 transition duration-300 bg-gradient-to-br from-purple-100/20 via-transparent to-cyan-100/20" />
-
-              {/* Trend Badge */}
               <div className="absolute top-4 right-4 z-10">
-                <Badge className={`text-xs px-2 py-1 border ${badgeColor}`}>
-                  {TrendEmoji} {stat.trend}
-                </Badge>
+                
+                  
+                  <Badge className={`text-xs px-2 py-1 border ${badgeColor}`}>
+                    {TrendEmoji} {stat.trend} 
+                  </Badge>
+               
               </div>
-
               <CardHeader className="pb-3 relative z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shadow-sm">
@@ -90,7 +129,6 @@ export default function OverviewCards() {
                   </div>
                 </div>
               </CardHeader>
-
               <CardFooter className="flex flex-col items-start gap-1 px-5 pb-5 pt-0 text-sm text-muted-foreground relative z-10">
                 <span className="font-medium text-foreground">{stat.description}</span>
                 <span className="text-xs">Tracked in real-time</span>
