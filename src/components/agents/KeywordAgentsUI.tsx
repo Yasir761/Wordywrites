@@ -2,7 +2,13 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 
-export function KeywordAgentUI({ keyword, onChangeKeyword, onComplete }) {
+interface KeywordAgentUIProps {
+  keyword: string;
+  onChangeKeyword: (keyword: string) => void;
+  onComplete: (data: any) => void;
+}
+
+export function KeywordAgentUI({ keyword, onChangeKeyword, onComplete }: KeywordAgentUIProps) {
   const [loading, setLoading] = useState(false)
 
   async function handleStart() {
