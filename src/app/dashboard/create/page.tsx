@@ -248,7 +248,7 @@ export default function BlogGenerator() {
                 Generate Another
               </button>
               <button
-                onClick={() => router.push("/integration/wordpress/page")}
+                onClick={() => router.push("/dashboard/wordpress")}
                 className="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white rounded-lg transition-all duration-300 font-medium shadow-lg"
               >
                 Publish Blog

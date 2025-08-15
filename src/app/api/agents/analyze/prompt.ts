@@ -1,4 +1,11 @@
-export function createPrompt(keyword: string, serp: any[]): string {
+// Define the SerpResult type if not imported from elsewhere
+type SerpResult = {
+  title: string;
+  link: string;
+  snippet: string;
+};
+
+export function createPrompt(keyword: string, serp: SerpResult[]): string {
   const topResults = serp.slice(0, 5).map((result, i) => {
     return `Result ${i + 1}:
 Title: ${result.title}

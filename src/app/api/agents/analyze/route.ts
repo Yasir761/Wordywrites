@@ -91,8 +91,11 @@ export async function POST(req: NextRequest) {
       ...validation.data
     })
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("🔍 Analyze Agent Fatal Error:", err)
-    return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 })
+    if (err instanceof Error) {
+      return NextResponse.json({ error: err.message }, { status: 500 })
+    }
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

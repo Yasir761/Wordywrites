@@ -5,25 +5,15 @@ import Link from "next/link";
 
 const integrations = [
   {
-    name: "Google Docs",
-    icon: "/icons/googledocs.svg",
-    description: "1-click export to Docs",
+    name: "WordPress",
+    icon: "/icons/wordpress.svg",
+    description: "Publish directly to your blog",
+    link: "/integration/wordpress",
   },
   {
     name: "Medium",
     icon: "/icons/medium.svg",
     description: "Copy & paste formatted HTML",
-  },
-  {
-    name: "WordPress",
-    icon: "/icons/wordpress.svg",
-    description: "Publish directly to your blog",
-    link: "/integration/wordpress", 
-  },
-  {
-    name: "LinkedIn",
-    icon: "/icons/linkedin.svg",
-    description: "Auto-generate social teasers",
   },
 ];
 
@@ -32,14 +22,14 @@ export default function IntegrationGrid() {
     <section className="py-24" id="integrations">
       <div className="text-center mb-12">
         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-          Integrate with Tools You Already Use
+          Seamless Publishing
         </h2>
         <p className="mt-2 text-gray-600 text-base sm:text-lg">
-          Wordywrites connects seamlessly to your publishing stack.
+          Go live in seconds with direct WordPress publishing or ready-to-paste Medium formatting.
         </p>
       </div>
 
-      <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-8 px-6">
+      <div className="max-w-md mx-auto grid grid-cols-2 gap-8 px-6">
         {integrations.map((integration, i) =>
           integration.link ? (
             <Link

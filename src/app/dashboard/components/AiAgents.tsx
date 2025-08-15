@@ -19,7 +19,7 @@ const AGENT_LABELS: Record<string, string> = {
   seo: "Meta Optimizer",
   tone: "Tone & Voice Styler",
   hashtags: "Hashtag Generator",
-  teaser: "Teaser Creator",
+  ContentPreview: "Teaser Creator",
   analyze: "Competitor Analyzer",
   crawl: "Content Scraper",
   blog: "AI Blog Writer",

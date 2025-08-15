@@ -4,58 +4,47 @@ import { useEffect, useState } from 'react'
 import { Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-// Updated plan details as per your latest instruction
 const plans = [
   {
     name: 'Free',
     price: '$0',
-    description: 'Start for free with limited access.',
+    description: 'Perfect for testing Wordywrites.',
     features: [
-      { label: '5 blog credits/month', included: true },
-      { label: 'Custom tone & voice', included: false },
-      { label: 'SEO optimization', included: false },
-      { label: 'Export to Google Docs', included: false },
-      { label: 'Export to WordPress', included: false },
-      { label: 'Publish to X (Twitter)', included: false },
-      { label: 'LinkedIn teaser generation', included: false },
-      { label: 'Repurpose Toolkit', included: false },
+      { label: 'Keyword Agent', included: true },
+      { label: 'Outline Agent', included: true },
+      { label: 'Blog Writing Agent — 5 posts/month', included: true },
+      { label: 'SEO Agent', included: false },
+      { label: 'Tone Agent', included: false },
+      { label: 'Hashtag Agent', included: false },
+      { label: 'Teaser Agent', included: false },
+      { label: 'Analyze Agent', included: false },
+      { label: 'Crawl Agent', included: false },
+      { label: 'Publish to WordPress', included: false },
+      { label: 'Copy for Medium', included: false },
     ],
     cta: 'Start for Free',
     highlight: false,
   },
   {
-    name: 'Starter',
-    price: '$7.99/mo',
-    description: 'For consistent blogging and Google Docs export.',
-    features: [
-      { label: '25 blog credits/month', included: true },
-      { label: 'Custom tone & voice', included: true },
-      { label: 'SEO optimization', included: true },
-      { label: 'Export to Google Docs', included: true },
-      { label: 'Export to WordPress', included: false },
-      { label: 'Publish to X (Twitter)', included: false },
-      { label: 'LinkedIn teaser generation', included: true },
-      { label: 'Repurpose Toolkit', included: false },
-    ],
-    cta: 'Get Starter Plan',
-    highlight: true,
-  },
-  {
     name: 'Pro',
     price: '$9.99/mo',
-    description: 'Full power unlocked with unlimited blogging.',
+    description: 'Everything you need to blog better.',
     features: [
-      { label: 'Unlimited blog credits', included: true },
-      { label: 'Custom tone & voice', included: true },
-      { label: 'SEO optimization', included: true },
-      { label: 'Export to Google Docs', included: true },
-      { label: 'Export to WordPress', included: true },
-      { label: 'Publish to X (Twitter)', included: true },
-      { label: 'LinkedIn teaser generation', included: true },
-      { label: 'Repurpose Toolkit', included: true },
+      { label: 'Unlimited Blog Writing', included: true },
+      { label: 'Keyword Agent', included: true },
+      { label: 'Outline Agent', included: true },
+      { label: 'SEO Agent', included: true },
+      { label: 'Tone Agent', included: true },
+      { label: 'Hashtag Agent', included: true },
+      { label: 'Teaser Agent', included: true },
+      { label: 'Analyze Agent', included: true },
+      { label: 'Crawl Agent', included: true },
+      { label: 'Publish to WordPress', included: true },
+      { label: 'Copy for Medium', included: true },
     ],
     cta: 'Go Pro',
-    highlight: false,
+    highlight: true,
+    variantId: 123456, // <-- your actual Lemon Squeezy Pro plan variant ID
   },
 ]
 
@@ -66,7 +55,24 @@ export default function Pricing() {
     setMounted(true)
   }, [])
 
-  if (!mounted) return null // Avoid hydration mismatch
+  if (!mounted) return null
+
+  const handleCheckout = async (variantId?: number) => {
+    if (!variantId) return
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        variantId,
+        userId: 'example-user-id', // replace with logged-in user ID
+      }),
+    })
+
+    const data = await res.json()
+    if (data.url) {
+      window.location.href = data.url
+    }
+  }
 
   return (
     <section className="py-24 scroll-mt-28" id="pricing">
@@ -77,7 +83,7 @@ export default function Pricing() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4 sm:px-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-4xl mx-auto px-4 sm:px-6">
         {plans.map((plan, i) => (
           <div
             key={i}
@@ -111,7 +117,12 @@ export default function Pricing() {
               ))}
             </ul>
 
-            <Button className="mt-6 w-full">{plan.cta}</Button>
+            <Button
+              className="mt-6 w-full"
+              onClick={() => handleCheckout(plan.variantId)}
+            >
+              {plan.cta}
+            </Button>
           </div>
         ))}
       </div>

@@ -14,12 +14,13 @@ export default function SignUpPage() {
               "border-gray-300 focus:border-purple-500 focus:ring-purple-500",
           },
           variables: {
-            colorPrimary: "#9333ea", // Purple-600
+            colorPrimary: "#9333ea",
           },
         }}
         path="/sign-up"
         routing="path"
         signInUrl="/sign-in"
+        afterSignUpUrl="/dashboard" // 👈 force redirect after sign-up
       />
     </div>
   );

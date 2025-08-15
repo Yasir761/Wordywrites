@@ -7,7 +7,7 @@ import { isWithinTokenLimit, splitTextByTokenLimit } from "@/app/api/utils/token
 import { connectDB } from "@/app/api/utils/db";
 import { CrawledBlogModel } from "@/app/models/crawledBlog";
 // import { auth } from "@clerk/nextjs/server";
-import { checkProAccess } from "@/app/api/utils/useCredits";
+// import { checkProAccess } from "@/app/api/utils/useCredits";
 
 const parser = new Parser();
 const MAX_TOKENS = 4000;

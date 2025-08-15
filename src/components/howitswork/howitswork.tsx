@@ -18,51 +18,52 @@ import {
 
 const howItWorksSteps = [
   {
-    title: 'Just Add a Keyword',
-    summary: 'Start with one idea — we’ll handle the rest.',
+    title: 'Keyword Agent',
+    summary: 'Understands your audience in seconds — used in 1,200+ live blogs.',
     description:
-      'Type a single keyword and let Wordywrites handle the research. Behind the scenes, our AI agents analyze trends, hashtags, audience, and competition to give you a strong strategic starting point.',
+      'The Keyword Agent analyzes your target keyword to uncover search intent, ranking difficulty, and related phrases. It’s the strategic brain behind every blog we create.',
     gradient: 'from-[#e0f2fe] via-[#e0e7ff] to-[#ede9fe]',
     delay: 0.1,
-    icon: TrendingUp,
+    icon: TrendingUp, // could replace with Search icon if preferred
   },
   {
-    title: 'SEO Strategy Engine',
-    summary: 'More than content — a full strategy.',
+    title: 'SEO Agent',
+    summary: 'Optimizes for over 50 ranking factors — automatically.',
     description:
-      'Our engine builds a growth-ready plan with optimized titles, relevant hashtags, smart tone adaptation, and teaser copy for sharing — all aligned to your keyword and audience.',
+      'The SEO Agent ensures your blog is structured, tagged, and keyword-optimized for maximum visibility. From meta descriptions to headline scoring, it’s like having an SEO consultant built in.',
     gradient: 'from-[#fef3c7] via-[#fcd34d] to-[#fca5a5]',
     delay: 0.15,
     icon: Sparkles,
   },
   {
-    title: 'AI Blueprint Builder',
-    summary: 'A structure that performs.',
+    title: 'Outline Agent',
+    summary: 'Creates clean, high-converting blog blueprints.',
     description:
-      'Wordywrites crafts a smart blog outline with proper H2s, H3s, CTAs, and alignment with tone and audience — so your blog is compelling before it’s even written.',
+      'The Outline Agent turns your keyword and tone into a strategic structure with H2s, H3s, CTAs, and internal linking cues — before a single word is written.',
     gradient: 'from-[#ede9fe] via-[#d8b4fe] to-[#f0abfc]',
     delay: 0.2,
     icon: FileText,
   },
   {
-    title: 'Blog Writing Magic',
-    summary: 'Written and refined by AI.',
+    title: 'Blog Writing Agent',
+    summary: 'Writes & refines — ready to publish in minutes.',
     description:
-      'Our AI Writer Agent generates the full blog, while the Editor Agent polishes tone, structure, and grammar. You get publish-ready content instantly.',
+      'Combining human-like creativity with data-driven optimization, the Blog Writing Agent produces complete, SEO-ready articles. The built-in Editor Agent then polishes grammar, tone, and flow.',
     gradient: 'from-[#d1fae5] via-[#a7f3d0] to-[#99f6e4]',
     delay: 0.25,
     icon: PenLine,
   },
   {
-    title: 'Export & Publish',
-    summary: 'Send it live anywhere.',
+    title: 'Publish Anywhere',
+    summary: 'Export to WordPress, Copy to Medium or anywhere you want.',
     description:
-      'Copy HTML, export to Google Docs or PDF, or publish directly to WordPress or Medium. Wordywrites supports your entire publishing workflow.',
+      'Once approved, your content is ready for one-click export as HTML, PDF, or Wordpress — so you can go live faster and keep your publishing workflow smooth.',
     gradient: 'from-[#e0f2fe] via-[#c7d2fe] to-[#fce7f3]',
     delay: 0.3,
     icon: Upload,
   },
 ]
+
 
 export function HowItWorks() {
   return (

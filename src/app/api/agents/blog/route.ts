@@ -7,7 +7,7 @@ import {
   splitTextByTokenLimit,
 } from "@/app/api/utils/tokenUtils";
 import { connectDB } from "@/app/api/utils/db";
-import { checkAndConsumeCredit } from "@/app/api/utils/useCredits";
+// import { checkAndConsumeCredit } from "@/app/api/utils/creditUtils"; // Uncomment if credit check is needed
 
 const MAX_TOKENS = 2048;
 
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     const blog = data.choices?.[0]?.message?.content?.trim();
     const wordCount = blog ? blog.split(/\s+/).length : 0;
 
-    console.log("📨 Full OpenAI response:", JSON.stringify(data, null, 2));
+    // console.log("📨 Full OpenAI response:", JSON.stringify(data, null, 2));
 
     // 🔍 Validate output schema
     const result = BlogOutputSchema.safeParse({ blog, keyword, wordCount });
@@ -115,10 +115,10 @@ export async function POST(req: NextRequest) {
       seo,        // pass through SEO agent object
       wordCount,  // explicitly include word count
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("❌ Blog Agent Error:", err);
     return NextResponse.json(
-      { error: err.message || "Internal error" },
+      { error: (err instanceof Error ? err.message : "Internal error") },
       { status: 500 }
     );
   }

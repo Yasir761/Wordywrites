@@ -56,12 +56,12 @@ export async function POST(req: NextRequest) {
       editLink,
       result,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("💥 WordPress Export Error:", err);
     return NextResponse.json(
       {
         error: "Failed to export to WordPress",
-        detail: err?.message || err,
+        detail: err instanceof Error ? err.message : err,
       },
       { status: 500 }
     );

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 // import { auth } from "@clerk/nextjs/server";
-import { checkAndConsumeCredit } from "@/app/api/utils/useCredits";
+// import { checkAndConsumeCredit } from "@/app/api/utils/useCredits";
 import { createPrompt } from "./prompt";
 import { SEOOptimizerSchema } from "./schema";
 

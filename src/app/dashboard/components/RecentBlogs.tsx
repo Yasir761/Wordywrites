@@ -37,7 +37,7 @@ export default function RecentBlogs() {
     const res = await fetch(`/api/createdBlogs?page=${page}`);
         if (!res.ok) throw new Error("Failed to fetch blogs");
         const data = await res.json();
-        console.log("API response:", data);
+        // console.log("API response:", data);
         setBlogs(Array.isArray(data) ? data : []);
         setTotalPages(data.totalPages || 1);
       } catch (err: any) {
@@ -49,7 +49,9 @@ export default function RecentBlogs() {
     fetchBlogs();
   }, [page]);
 
-  // Handle Publish
+ 
+// Handle Publish
+// Handle Publish
 const handlePublish = (blog: any) => {
   const content =
     blog.blogAgent?.content ||
@@ -64,16 +66,15 @@ const handlePublish = (blog: any) => {
     return;
   }
 
-  const blogData = {
-    title: blog.seoAgent?.optimized_title || blog.title || "Untitled",
-    content,
-    tone: blog.toneAgent?.tone || "Neutral",
-    wordCount: blog.blogAgent?.wordCount || content.split(/\s+/).length,
-    ...blog,
-  };
+  const title = blog.seoAgent?.optimized_title || blog.title || "Untitled";
 
-  localStorage.setItem("blogData", JSON.stringify(blogData));
-  window.location.assign("/dashboard/wordpress");
+  // Encode and pass via URL
+  const encodedTitle = encodeURIComponent(title);
+  const encodedContent = encodeURIComponent(content);
+
+  window.location.assign(
+    `/dashboard/wordpress?title=${encodedTitle}&content=${encodedContent}`
+  );
 };
 
 

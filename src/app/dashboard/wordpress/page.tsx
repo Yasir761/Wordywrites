@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 
 export default function PublishBlogPage() {
   const [siteUrl, setSiteUrl] = useState("");
@@ -12,6 +13,7 @@ export default function PublishBlogPage() {
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState("");
+const searchParams = useSearchParams();
 
   useEffect(() => {
     const savedBlog = localStorage.getItem("blogData");
@@ -21,6 +23,22 @@ export default function PublishBlogPage() {
       setContent(parsed?.blog || "");
     }
   }, []);
+   useEffect(() => {
+    const titleFromUrl = searchParams.get("title");
+    const contentFromUrl = searchParams.get("content");
+
+    if (titleFromUrl && contentFromUrl) {
+      setTitle(decodeURIComponent(titleFromUrl));
+      setContent(decodeURIComponent(contentFromUrl));
+    } else {
+      const savedBlog = localStorage.getItem("blogData");
+      if (savedBlog) {
+        const parsed = JSON.parse(savedBlog);
+        setTitle(parsed?.seo?.optimized_title || "");
+        setContent(parsed?.blog || "");
+      }
+    }
+  }, [searchParams]);
 
   // Cycle loading steps
   useEffect(() => {

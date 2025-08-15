@@ -3,9 +3,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPrompt } from "./prompt";
 import { KeywordIntentSchema } from "./schema";
+import { z } from "zod";
 
+
+type KeywordIntent = z.infer<typeof KeywordIntentSchema>;
 // Simple in-memory cache
-const cache = new Map<string, any>();
+const cache = new Map<string, KeywordIntent>();
 
 export async function runKeywordAgent(keyword: string) {
   if (cache.has(keyword)) return { ...cache.get(keyword), cached: true };
@@ -60,7 +63,8 @@ export async function POST(req: NextRequest) {
 
     const data = await runKeywordAgent(keyword);
     return NextResponse.json(data);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Agent error" }, { status: 500 });
-  }
+  } catch (err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  return NextResponse.json({ error: message || "Agent error" }, { status: 500 });
+}
 }

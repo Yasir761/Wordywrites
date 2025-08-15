@@ -14,12 +14,13 @@ export default function SignInPage() {
               "border-gray-300 focus:border-indigo-500 focus:ring-indigo-500",
           },
           variables: {
-            colorPrimary: "#4f46e5", // Indigo-600
+            colorPrimary: "#4f46e5",
           },
         }}
         path="/sign-in"
         routing="path"
         signUpUrl="/sign-up"
+        afterSignInUrl="/dashboard" // 👈 force redirect after sign-in
       />
     </div>
   );

@@ -40,7 +40,7 @@ async function ensureTerms(
     let res = await fetch(`${siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/${type}?slug=${slug}`, {
       headers: { Authorization: authHeader }
     });
-    let existing = await res.json();
+    const existing = await res.json();
 
     if (Array.isArray(existing) && existing.length > 0) {
       ids.push(existing[0].id);
@@ -103,7 +103,7 @@ export async function publishBlogToWordPress(
   let finalTags = Array.isArray(tags) && tags.length > 0 ? tags : [];
   if (finalTags.length === 0 && content) {
     finalTags = extractKeywords(content);
-    console.log("🔹 Auto-generated tags:", finalTags);
+    // console.log("🔹 Auto-generated tags:", finalTags);
   }
   if (finalTags.length > 0) {
     requestBody.tags = await ensureTerms(siteUrl, authHeader, finalTags, "tags");

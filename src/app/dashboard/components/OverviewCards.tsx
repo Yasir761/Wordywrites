@@ -5,6 +5,7 @@ import {
   IconArticle,
   IconWriting,
   IconStar,
+  IconLock,
 } from "@tabler/icons-react"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -15,8 +16,7 @@ import {
   CardFooter,
 } from "@/components/ui/card"
 import { motion } from "framer-motion"
-
-
+import PlanCard from "./PlanCard" // import your plan card
 
 export default function OverviewCards() {
   const [stats, setStats] = useState([
@@ -49,36 +49,39 @@ export default function OverviewCards() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const res = await fetch("/api/user/stats")
+        const res = await fetch("/api/user/stats", { credentials: "include" })
         const data = await res.json()
 
-     setStats([
-  {
-    label: "Blogs Created",
-    value: data.blogCount,
-    icon: IconArticle,
-    trend: `${data.trends.blogs >= 0 ? "+" : ""}${data.trends.blogs}%`,
-    description: "Total number of blogs",
-    direction: data.trends.blogs >= 0 ? "up" : "down",
-  },
-  {
-    label: "Words Written",
-    value: data.totalWords.toLocaleString(),
-    icon: IconWriting,
-    trend: `${data.trends.words >= 0 ? "+" : ""}${data.trends.words}%`,
-    description: "Word count across all blogs",
-    direction: data.trends.words >= 0 ? "up" : "down",
-  },
-  {
-    label: "Avg SEO Score",
-    value: `${data.avgSEO}%`,
-    icon: IconStar,
-    trend: `${data.trends.seo >= 0 ? "+" : ""}${data.trends.seo}%`,
-    description: "Improved SEO performance",
-    direction: data.trends.seo >= 0 ? "up" : "down",
-  },
-]);
-
+        // Update stats
+        setStats([
+          {
+            label: "Blogs Created",
+            value: data.blogCount,
+            icon: IconArticle,
+            trend: `${data.trends.blogs >= 0 ? "+" : ""}${data.trends.blogs}%`,
+            description:
+              data.plan === "Free"
+                ? `${Math.max(0, 5 - data.blogsGeneratedThisMonth)} blogs left this month`
+                : "You can create unlimited blogs 🚀",
+            direction: data.trends.blogs >= 0 ? "up" : "down",
+          },
+          {
+            label: "Words Written",
+            value: data.totalWords.toLocaleString(),
+            icon: IconWriting,
+            trend: `${data.trends.words >= 0 ? "+" : ""}${data.trends.words}%`,
+            description: "Word count across all blogs",
+            direction: data.trends.words >= 0 ? "up" : "down",
+          },
+          {
+            label: "Avg SEO Score",
+            value: `${data.avgSEO}%`,
+            icon: IconStar,
+            trend: `${data.trends.seo >= 0 ? "+" : ""}${data.trends.seo}%`,
+            description: "Improved SEO performance",
+            direction: data.trends.seo >= 0 ? "up" : "down",
+          },
+        ])
       } catch (err) {
         console.error("Failed to load stats:", err)
       }
@@ -88,7 +91,7 @@ export default function OverviewCards() {
   }, [])
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 px-4 xl:px-6 mt-8">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 px-4 xl:px-6 mt-8">
       {stats.map((stat, i) => {
         const Icon = stat.icon
         const trendUp = stat.direction === "up"
@@ -107,12 +110,9 @@ export default function OverviewCards() {
             <Card className="relative overflow-hidden rounded-2xl border border-white/30 bg-white/70 backdrop-blur-md shadow-sm transition-all hover:shadow-xl hover:scale-[1.015]">
               <div className="absolute inset-0 z-0 pointer-events-none opacity-0 group-hover:opacity-100 transition duration-300 bg-gradient-to-br from-purple-100/20 via-transparent to-cyan-100/20" />
               <div className="absolute top-4 right-4 z-10">
-                
-                  
-                  <Badge className={`text-xs px-2 py-1 border ${badgeColor}`}>
-                    {TrendEmoji} {stat.trend} 
-                  </Badge>
-               
+                <Badge className={`text-xs px-2 py-1 border ${badgeColor}`}>
+                  {TrendEmoji} {stat.trend}
+                </Badge>
               </div>
               <CardHeader className="pb-3 relative z-10">
                 <div className="flex items-center gap-3">
@@ -137,6 +137,15 @@ export default function OverviewCards() {
           </motion.div>
         )
       })}
+
+      {/* Add the UserPlanCard as a separate card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        <PlanCard />
+      </motion.div>
     </div>
   )
 }

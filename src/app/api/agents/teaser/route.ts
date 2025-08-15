@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
       hashtags = ["#blog", "#content", "#marketing"]; // fallback hashtags
     }
 
+    hashtags = hashtags.slice(0, 10);
     // --- STEP 5: Extract CTA ---
     const engagementCTA =
       sections.find((s: string) =>

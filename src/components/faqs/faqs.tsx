@@ -8,42 +8,42 @@ const faqs = [
   {
     question: 'What do I need to get started?',
     answer:
-      'Just one keyword. Wordywrites will generate a full-length, optimized blog for you — no setup or prior knowledge needed.',
+      'Just one keyword. Wordywrites instantly turns it into a complete, SEO-friendly blog — no prior writing or SEO skills required.',
   },
   {
-    question: 'Can I adjust tone, style, or audience?',
+    question: 'Can I customize tone, style, or audience?',
     answer:
-      'Absolutely. You can choose from tones like informative, casual, formal, or promotional, and tailor it to your target audience.',
+      'Yes! Choose from tones like informative, conversational, formal, or promotional, and fine-tune it for your exact audience.',
   },
   {
-    question: 'Will the blogs be SEO optimized?',
+    question: 'Will my blogs be SEO-optimized?',
     answer:
-      'Yes. Our engine applies modern SEO practices — optimized titles, structured outlines, and relevant keywords to help you rank.',
+      'Absolutely. We handle titles, headings, keywords, and structure so your content has the best chance to rank on Google.',
   },
   {
-    question: 'Is the content really plagiarism-free?',
+    question: 'Is the content plagiarism-free?',
     answer:
-      '100%. We run all generated content through AI-powered plagiarism checks to ensure originality and safety.',
+      '100%. Every piece is generated fresh and run through AI-powered plagiarism checks to ensure originality.',
   },
   {
-    question: 'Can I export the content easily?',
+    question: 'Can I export my content?',
     answer:
-      'Yes — you can download as PDF, export to Google Docs, or publish directly to WordPress or Medium.',
+      'Yes — download as PDF, copy for Medium, or publish directly to WordPress with one click.',
   },
   {
-    question: 'Will my data be saved or reused?',
+    question: 'Will my data be stored or reused?',
     answer:
-      'No. Your inputs and generated content are private and never reused or stored beyond your account history.',
+      'No. Your inputs and outputs are private and never shared or reused outside your account.',
   },
   {
-    question: 'Do I need to connect my CMS to use it?',
+    question: 'Do I need to connect my CMS?',
     answer:
-      'No. CMS integration is optional. You can use all features manually too.',
+      'No. CMS integrations are optional — you can simply copy or download your content if you prefer.',
   },
   {
     question: 'How is Wordywrites different from ChatGPT?',
     answer:
-      'Unlike general AI tools, Wordywrites is purpose-built for SEO blog writing with dedicated AI agents, structured workflows, and publishing tools.',
+      'Wordywrites is purpose-built for SEO blogging, with specialized AI agents, a structured workflow, and built-in publishing tools — no endless prompting required.',
   },
 ]
 
@@ -72,15 +72,16 @@ export default function FAQSection() {
         {faqs.map((faq, i) => (
           <div
             key={i}
-            className="bg-white rounded-2xl px-5 sm:px-6 py-4 shadow-md cursor-pointer transition-all duration-200 hover:shadow-lg"
+            className={`bg-white rounded-2xl px-5 sm:px-6 py-4 shadow-md cursor-pointer transition-all duration-200 
+              ${openIndex === i ? 'shadow-lg border border-indigo-100' : 'hover:shadow-lg'}`}
             onClick={() => toggleFAQ(i)}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-gray-800 font-medium text-base sm:text-lg">
+              <h3 className="text-gray-800 font-medium text-base sm:text-lg pr-4">
                 {faq.question}
               </h3>
               <ChevronDown
-                className={`w-5 h-5 transition-transform duration-300 text-indigo-500 ${
+                className={`w-5 h-5 flex-shrink-0 transition-transform duration-300 text-indigo-500 ${
                   openIndex === i ? 'rotate-180' : ''
                 }`}
               />
@@ -91,7 +92,8 @@ export default function FAQSection() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="pt-3 text-sm sm:text-base text-gray-600"
+                  transition={{ duration: 0.25 }}
+                  className="pt-3 text-sm sm:text-base text-gray-600 leading-relaxed"
                 >
                   {faq.answer}
                 </motion.div>
@@ -102,7 +104,7 @@ export default function FAQSection() {
       </div>
 
       <p className="text-center mt-10 text-sm text-gray-500">
-        Trusted by founders, marketers, and creators around the world.
+        Trusted by founders, marketers, and creators worldwide.
       </p>
     </section>
   )

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import Link from 'next/link'
 
 export default function ContactPage() {
   const [status, setStatus] = useState('')
@@ -54,6 +55,15 @@ export default function ContactPage() {
             </p>
           )}
         </form>
+
+        {/* Back to Home button */}
+        <div className="text-center mt-6">
+          <Link href="/" passHref>
+            <Button variant="outline" className="rounded-full px-6">
+              ← Back to Home
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   )
