@@ -10,7 +10,7 @@ type KeywordIntent = z.infer<typeof KeywordIntentSchema>;
 // Simple in-memory cache
 const cache = new Map<string, KeywordIntent>();
 
-export async function runKeywordAgent(keyword: string) {
+ async function runKeywordAgent(keyword: string) {
   if (cache.has(keyword)) return { ...cache.get(keyword), cached: true };
 
   const prompt = createPrompt(keyword);
