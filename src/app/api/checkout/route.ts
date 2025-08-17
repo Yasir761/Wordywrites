@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
           type: "checkouts",
           attributes: {
             checkout_data: { custom: { userId } },
-            // checkout_options: { embed: false },
+            checkout_options: { embed: false },
           },
           relationships: {
             store: { data: { type: "stores", id: '203600' } },
