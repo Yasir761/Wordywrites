@@ -9,9 +9,12 @@ import { UserModel } from "@/app/models/user";
 
 
 
+function getBaseUrl() {
+  if (typeof window !== "undefined") return ""; // browser
+  return process.env.NEXT_PUBLIC_APP_URL ; // server
+}
 
-
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+const baseUrl = getBaseUrl();
 
 const AGENT_ENDPOINTS = {
   analyze: `${baseUrl}/api/agents/analyze`,

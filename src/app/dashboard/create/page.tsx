@@ -59,7 +59,7 @@ export default function BlogGenerator() {
     if (!keyword) return;
     setIsLoading(true);
     try {
-      const res = await fetch("/api/agents/orchestrator", {
+      const res = await fetch(`/api/agents/orchestrator`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ keyword, tone }),
