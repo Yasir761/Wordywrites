@@ -339,7 +339,22 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    const plan = await getUserPlan(userId);
+    // const plan = await getUserPlan(userId);
+    const plan = {
+   name: "Pro",
+ monthlyCredits: Infinity,
+   aiAgents: [
+    "analyze",
+    "crawl",
+    "keyword",
+   "blueprint",
+     "tone",
+    "hashtags",
+     "seo",
+     "blog",
+   ],
+   integrations: ["wordpress", "gdocs", "twitter", "medium"],
+ };
 
     // ✅ Check and reset monthly blog count for Free plan
     if (plan.name === "Free") {
