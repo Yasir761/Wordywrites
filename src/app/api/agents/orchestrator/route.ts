@@ -705,7 +705,7 @@ export async function POST(req: NextRequest) {
       }
 
       const start = performance.now();
-      const res = await fetch(`${BASE_URL}${AGENT_ENDPOINTS[agent]}`, {
+      const res = await fetch(`${AGENT_ENDPOINTS[agent]}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
