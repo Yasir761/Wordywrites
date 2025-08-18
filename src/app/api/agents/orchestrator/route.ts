@@ -8,22 +8,24 @@ import { getUserPlan } from "@/app/api/utils/planUtils";
 import { UserModel } from "@/app/models/user";
 
 
+
+
+
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
 const AGENT_ENDPOINTS = {
-  analyze: "/api/agents/analyze",
-  crawl: "/api/agents/crawl",
-  keyword: "/api/agents/keyword",
-  blueprint: "/api/agents/blueprint",
-  tone: "/api/agents/tone",
-  hashtags: "/api/agents/hashtags",
-  seo: "/api/agents/seo-optimizer",
-  blog: "/api/agents/blog",
-  teaser: "/api/agents/teaser",
+  analyze: `${baseUrl}/api/agents/analyze`,
+  crawl: `${baseUrl}/api/agents/crawl`,
+  keyword: `${baseUrl}/api/agents/keyword`,
+  blueprint: `${baseUrl}/api/agents/blueprint`,
+  tone: `${baseUrl}/api/agents/tone`,
+  hashtags: `${baseUrl}/api/agents/hashtags`,
+  seo: `${baseUrl}/api/agents/seo-optimizer`,
+  blog: `${baseUrl}/api/agents/blog`,
+  teaser: `${baseUrl}/api/agents/teaser`,
 };
 
-const BASE_URL =
-  process.env.NODE_ENV === "development"
-    ? "http://localhost:3000"
-    : process.env.NEXT_PUBLIC_APP_URL;
+
 
 
 
@@ -649,6 +651,21 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     const plan = await getUserPlan(userId);
+    //  const plan = {
+    //   name: "Pro",
+    //   monthlyCredits: Infinity,
+    //   aiAgents: [
+    //     "analyze",
+    //     "crawl",
+    //     "keyword",
+    //     "blueprint",
+    //     "tone",
+    //     "hashtags",
+    //     "seo",
+    //     "blog",
+    //   ],
+    //   integrations: ["wordpress", "gdocs", "twitter", "medium"],
+    // };
 
     // ✅ Check and reset monthly blog count for Free plan
     if (plan.name === "Free") {
