@@ -73,6 +73,11 @@ export default function CTAAndFooter() {
                 Contact
               </Link>
             </p>
+             <p>
+              <Link href="/terms&condition" className="hover:text-indigo-600 transition">
+                Terms & Conditions
+              </Link>
+            </p>
           </div>
 
           {/* Newsletter */}
