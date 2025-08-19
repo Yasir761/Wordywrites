@@ -320,7 +320,8 @@ const AGENT_ENDPOINTS = {
 };
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
+// const userId = req.headers.get('x-user-id');
+ const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized: Please sign in" }, { status: 401 });
   }
@@ -339,22 +340,23 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    // const plan = await getUserPlan(userId);
-    const plan = {
-   name: "Pro",
- monthlyCredits: Infinity,
-   aiAgents: [
-    "analyze",
-    "crawl",
-    "keyword",
-   "blueprint",
-     "tone",
-    "hashtags",
-     "seo",
-     "blog",
-   ],
-   integrations: ["wordpress", "gdocs", "twitter", "medium"],
- };
+    const plan = await getUserPlan(userId);
+//     const plan = {
+//    name: "Pro",
+//  monthlyCredits: Infinity,
+//    aiAgents: [
+//     "analyze",
+//     "crawl",
+//     "keyword",
+//    "blueprint",
+//      "tone",
+//     "hashtags",
+//      "seo",
+//      "blog",
+//      'teaser',
+//    ],
+//    integrations: ["wordpress", "gdocs", "twitter", "medium"],
+//  };
 
     // ✅ Check and reset monthly blog count for Free plan
     if (plan.name === "Free") {
