@@ -23,8 +23,8 @@ const BlogSchema = new mongoose.Schema({
   },
 
   toneAgent: {
-    tone: { type: String, required: true },
-    voice: { type: String, required: true },
+    tone: { type: String, required: false },
+    voice: { type: String, required: false },
   },
 
   blueprintAgent: {
@@ -32,11 +32,11 @@ const BlogSchema = new mongoose.Schema({
   },
 
   seoAgent: {
-    optimized_title: { type: String, required: true },
-    meta_description: { type: String, required: true },
-    slug: { type: String, required: true },
-    final_hashtags: { type: [String], required: true },
-    seo_score: { type: Number, min: 0, max: 100, required: true },
+    optimized_title: { type: String, required: false },
+    meta_description: { type: String, required: false },
+    slug: { type: String, required: false },
+    final_hashtags: { type: [String], required: false },
+    seo_score: { type: Number, min: 0, max: 100, required: false },
   },
 
   blogAgent: {

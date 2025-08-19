@@ -20,7 +20,7 @@ export const PLANS = {
     price: 9.99,
     monthlyCredits: Infinity,
     aiAgents: ["keyword", "blueprint", "tone", "seo", "hashtags", "blog", "analyze", "teaser", "crawl"],
-    integrations: ["googleDocs", "linkedin", "wordpress", "x", "repurposeKit"],
+    integrations: ["wordpress"],
     features: ["Everything Unlimited", "All integrations", "Crawl competitor blogs"],
   },
 
