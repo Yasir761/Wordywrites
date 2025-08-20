@@ -8,12 +8,40 @@ import { Instagram, X, Mail } from 'lucide-react'
 
 export default function CTAAndFooter() {
   const [mounted, setMounted] = useState(false)
+  const [email, setEmail] = useState("")
+  const [showPopup, setShowPopup] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
   if (!mounted) return null
+
+  const handleSubscribe = async () => {
+    if (!email) return
+    setLoading(true)
+
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+
+      if (res.ok) {
+        setShowPopup(true)
+        setEmail("")
+      } else {
+        alert("⚠️ Subscription failed. Try again later.")
+      }
+    } catch (err) {
+      console.error(err)
+      alert("⚠️ Something went wrong.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <footer className="mt-24">
@@ -53,41 +81,13 @@ export default function CTAAndFooter() {
 
           {/* Quick Links */}
           <div className="space-y-2">
-            <p>
-              <Link href="#features" className="hover:text-indigo-600 transition">
-                Features
-              </Link>
-            </p>
-            <p>
-              <Link href="#pricing" className="hover:text-indigo-600 transition">
-                Pricing
-              </Link>
-            </p>
-            <p>
-              <Link href="#faq" className="hover:text-indigo-600 transition">
-                FAQs
-              </Link>
-            </p>
-            <p>
-              <Link href="/contact" className="hover:text-indigo-600 transition">
-                Contact
-              </Link>
-            </p>
-             <p>
-              <Link href="/terms&condition" className="hover:text-indigo-600 transition">
-                Terms & Conditions
-              </Link>
-            </p>
-            <p>
-              <Link href="/privacy-policy" className="hover:text-indigo-600 transition">
-                Privacy-Policy
-              </Link>
-            </p>
-             <p>
-              <Link href="/refund-policy" className="hover:text-indigo-600 transition">
-                Refund-Policy
-              </Link>
-            </p>
+            <p><Link href="#features" className="hover:text-indigo-600 transition">Features</Link></p>
+            <p><Link href="#pricing" className="hover:text-indigo-600 transition">Pricing</Link></p>
+            <p><Link href="#faq" className="hover:text-indigo-600 transition">FAQs</Link></p>
+            <p><Link href="/contact" className="hover:text-indigo-600 transition">Contact</Link></p>
+            <p><Link href="/terms&condition" className="hover:text-indigo-600 transition">Terms & Conditions</Link></p>
+            <p><Link href="/privacy-policy" className="hover:text-indigo-600 transition">Privacy-Policy</Link></p>
+            <p><Link href="/refund-policy" className="hover:text-indigo-600 transition">Refund-Policy</Link></p>
           </div>
 
           {/* Newsletter */}
@@ -95,11 +95,17 @@ export default function CTAAndFooter() {
             <p className="font-medium text-gray-800">Join our newsletter</p>
             <div className="flex flex-col sm:flex-row gap-2">
               <Input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 className="rounded-full px-4 py-2 w-full"
               />
-              <Button className="rounded-full text-white px-5 w-full sm:w-auto">
-                Subscribe
+              <Button
+                onClick={handleSubscribe}
+                disabled={loading}
+                className="rounded-full text-white px-5 w-full sm:w-auto"
+              >
+                {loading ? "Subscribing..." : "Subscribe"}
               </Button>
             </div>
           </div>
@@ -110,6 +116,22 @@ export default function CTAAndFooter() {
           &copy; {new Date().getFullYear()} Wordywrites. All rights reserved.
         </div>
       </div>
+
+      {/* Popup */}
+      {showPopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-lg text-center">
+            <h3 className="text-lg font-semibold text-gray-800">🎉 Thank you for subscribing!</h3>
+            <p className="mt-2 text-gray-600">Please check your inbox for confirmation.</p>
+            <Button
+              className="mt-4 rounded-full"
+              onClick={() => setShowPopup(false)}
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
     </footer>
   )
 }

@@ -14,8 +14,9 @@ export default function CrawlEnhancePage() {
   const [result, setResult] = useState<any>(null);
   const [editedContent, setEditedContent] = useState<string>("");
   const [showDiff, setShowDiff] = useState(false);
+  const [plan, setPlan] = useState<"Free" | "Pro">("Free"); // plan state
 
-  // Load saved result from localStorage (same as original)
+  // Load saved result
   useEffect(() => {
     const savedResult = localStorage.getItem("crawlResult");
     if (savedResult) {
@@ -25,7 +26,27 @@ export default function CrawlEnhancePage() {
     }
   }, []);
 
+  // Fetch user plan
+  useEffect(() => {
+    const fetchPlan = async () => {
+      try {
+        const res = await fetch("/api/user/plan");
+        if (!res.ok) throw new Error("Failed to fetch user plan");
+        const data = await res.json();
+        setPlan(data.plan || "Free");
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchPlan();
+  }, []);
+
   const handleEnhance = async () => {
+    if (plan !== "Pro") {
+      alert("Enhancing blogs is available only for Pro users. Please upgrade.");
+      return;
+    }
+
     setError(null);
     setResult(null);
     setEditedContent("");
@@ -59,7 +80,6 @@ export default function CrawlEnhancePage() {
       setResult(data);
       setEditedContent(data.enhanced.content);
 
-      // Save to localStorage (same as original)
       localStorage.setItem("crawlResult", JSON.stringify(data));
     } catch {
       setError("Something went wrong. Try again.");
@@ -68,7 +88,6 @@ export default function CrawlEnhancePage() {
     }
   };
 
-  // Diff rendering
   const renderDiff = (original: string, enhanced: string) => {
     const diff = diffWords(original, enhanced);
     return diff.map((part, index) => {
@@ -144,13 +163,24 @@ export default function CrawlEnhancePage() {
           </div>
         )}
 
+        {/* Enhance Button */}
         <button
           onClick={handleEnhance}
-          disabled={loading}
-          className="mt-4 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl"
+          disabled={loading || plan !== "Pro"} // disable for Free users
+          className="mt-4 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? "Processing..." : "Enhance Blog"}
+          {loading
+            ? "Processing..."
+            : plan !== "Pro"
+            ? "Upgrade to Pro to Enhance"
+            : "Enhance Blog"}
         </button>
+
+        {plan !== "Pro" && !loading && (
+          <p className="text-center text-gray-500 text-sm mt-2">
+            Enhancing blogs is available only for Pro users. Please upgrade to unlock this feature.
+          </p>
+        )}
 
         {error && <p className="text-red-500 mt-4">{error}</p>}
 
@@ -169,9 +199,7 @@ export default function CrawlEnhancePage() {
 
             {/* Enhanced Blog */}
             <section className="p-6 rounded-2xl bg-green-50 border">
-              <h2 className="text-2xl font-semibold text-green-700">
-                Enhanced Blog (Editable)
-              </h2>
+              <h2 className="text-2xl font-semibold text-green-700">Enhanced Blog (Editable)</h2>
               <h3 className="text-lg font-medium mt-2">{result.enhanced.title}</h3>
               <p className="text-gray-600 mt-1">{result.enhanced.meta_description}</p>
               <div className="mt-4">

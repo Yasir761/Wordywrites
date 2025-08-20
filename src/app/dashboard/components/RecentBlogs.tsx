@@ -28,16 +28,32 @@ export default function RecentBlogs() {
   const [totalPages, setTotalPages] = React.useState(1);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
+  const [plan, setPlan] = React.useState<"Free" | "Pro">("Free"); // default Free
 
+  // Fetch user plan
+  React.useEffect(() => {
+    const fetchPlan = async () => {
+      try {
+        const res = await fetch("/api/user/plan");
+        if (!res.ok) throw new Error("Failed to fetch user plan");
+        const data = await res.json();
+        setPlan(data.plan || "Free");
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchPlan();
+  }, []);
+
+  // Fetch blogs
   React.useEffect(() => {
     const fetchBlogs = async () => {
       setLoading(true);
       setError("");
       try {
-    const res = await fetch(`/api/createdBlogs?page=${page}`);
+        const res = await fetch(`/api/createdBlogs?page=${page}`);
         if (!res.ok) throw new Error("Failed to fetch blogs");
         const data = await res.json();
-        // console.log("API response:", data);
         setBlogs(Array.isArray(data) ? data : []);
         setTotalPages(data.totalPages || 1);
       } catch (err: any) {
@@ -49,35 +65,31 @@ export default function RecentBlogs() {
     fetchBlogs();
   }, [page]);
 
- 
-// Handle Publish
-// Handle Publish
-const handlePublish = (blog: any) => {
-  const content =
-    blog.blogAgent?.content ||
-    blog.blogAgent?.blog ||
-    blog.blog ||
-    "";
+  const handlePublish = (blog: any) => {
+    if (plan !== "Pro") {
+      alert("Publishing to WordPress is available only for Pro users.");
+      return;
+    }
 
-  if (!content.trim()) {
-    console.log("Publishing blog:", blog);
-    console.log("Blog content length:", content.length);
-    alert("Blog content is missing. Please regenerate or fetch full content.");
-    return;
-  }
+    const content =
+      blog.blogAgent?.content ||
+      blog.blogAgent?.blog ||
+      blog.blog ||
+      "";
 
-  const title = blog.seoAgent?.optimized_title || blog.title || "Untitled";
+    if (!content.trim()) {
+      alert("Blog content is missing. Please regenerate or fetch full content.");
+      return;
+    }
 
-  // Encode and pass via URL
-  const encodedTitle = encodeURIComponent(title);
-  const encodedContent = encodeURIComponent(content);
+    const title = blog.seoAgent?.optimized_title || blog.title || "Untitled";
+    const encodedTitle = encodeURIComponent(title);
+    const encodedContent = encodeURIComponent(content);
 
-  window.location.assign(
-    `/dashboard/wordpress?title=${encodedTitle}&content=${encodedContent}`
-  );
-};
-
-
+    window.location.assign(
+      `/dashboard/wordpress?title=${encodedTitle}&content=${encodedContent}`
+    );
+  };
 
   return (
     <Card className="w-full mt-10 border border-white/30 bg-white/70 backdrop-blur-md shadow-md rounded-2xl">
@@ -125,37 +137,29 @@ const handlePublish = (blog: any) => {
                         transition={{ delay: i * 0.05 }}
                         className="group transition-all duration-200 hover:bg-gradient-to-r from-white/60 via-purple-50/30 to-cyan-50/30 backdrop-blur hover:shadow-sm"
                       >
-                        {/* Title as plain text */}
                         <TableCell className="font-medium text-gray-800">
                           {blog.seoAgent?.optimized_title || blog.title || "Untitled Blog"}
                         </TableCell>
-
-                        {/* Date */}
                         <TableCell className="text-sm text-gray-600">
                           {new Date(blog.createdAt).toLocaleDateString()}
                         </TableCell>
-
-                        {/* Tone */}
                         <TableCell>
                           <Badge className="text-xs font-medium border bg-blue-100 text-blue-700 border-blue-300">
                             {blog.toneAgent?.tone || "Neutral"}
                           </Badge>
                         </TableCell>
-
-                        {/* Word Count */}
                         <TableCell>
                           <span className="text-sm text-gray-700">
                             {blog.blogAgent?.wordCount || 0} words
                           </span>
                         </TableCell>
-
-                        {/* Single Action: Publish */}
                         <TableCell className="flex gap-2">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => handlePublish(blog)}
                             className="text-xs"
+                            disabled={plan !== "Pro"} // disable for Free users
                           >
                             Publish to WordPress
                           </Button>
