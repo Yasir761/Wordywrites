@@ -78,6 +78,16 @@ export default function CTAAndFooter() {
                 Terms & Conditions
               </Link>
             </p>
+            <p>
+              <Link href="/privacy-policy" className="hover:text-indigo-600 transition">
+                Privacy-Policy
+              </Link>
+            </p>
+             <p>
+              <Link href="/refund-policy" className="hover:text-indigo-600 transition">
+                Refund-Policy
+              </Link>
+            </p>
           </div>
 
           {/* Newsletter */}
