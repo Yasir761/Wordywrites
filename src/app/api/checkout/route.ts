@@ -8,12 +8,14 @@ export async function POST(req: Request) {
     console.log("Received request body:", body);
 
     if (!priceId) {
-      return NextResponse.json({ error: "Price ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Price ID is required" },
+        { status: 400 }
+      );
     }
 
     console.log("Creating transaction with price ID:", priceId);
 
-    // Create a draft transaction using sandbox API
     const transactionRes = await fetch("https://api.paddle.com/transactions", {
       method: "POST",
       headers: {
@@ -21,10 +23,15 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        items: [{ 
-          price_id: priceId, 
-          quantity: 1 
-        }]
+        items: [
+          {
+            price_id: priceId,
+            quantity: 1,
+          },
+        ],
+        // ✅ Redirect URLs (make sure these routes exist in your Next.js app)
+        return_url: "https://wordywrites.app/success",
+        cancel_url: "https://wordywrites.app/cancel",
       }),
     });
 
@@ -35,32 +42,39 @@ export async function POST(req: Request) {
       console.error("Status:", transactionRes.status);
       console.error("Response:", JSON.stringify(transactionData, null, 2));
       if (transactionData.error?.errors) {
-        console.error("Detailed errors:", JSON.stringify(transactionData.error.errors, null, 2));
+        console.error(
+          "Detailed errors:",
+          JSON.stringify(transactionData.error.errors, null, 2)
+        );
       }
       return NextResponse.json({ error: transactionData }, { status: 500 });
     }
 
     const transaction = transactionData.data;
-    console.log("✅ Transaction created:", transaction.id, "Status:", transaction.status);
-    
-    // Get the checkout URL from the transaction
+    console.log(
+      "✅ Transaction created:",
+      transaction.id,
+      "Status:",
+      transaction.status
+    );
+
     const checkoutUrl = transaction.checkout?.url;
-    
+
     if (!checkoutUrl) {
       console.error("❌ No checkout URL in transaction:", transaction);
-      return NextResponse.json({ 
-        error: "No checkout URL available" 
-      }, { status: 500 });
+      return NextResponse.json(
+        { error: "No checkout URL available" },
+        { status: 500 }
+      );
     }
 
     console.log("✅ Checkout URL:", checkoutUrl);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       transactionId: transaction.id,
-      checkoutUrl: checkoutUrl,
-      status: transaction.status
+      checkoutUrl,
+      status: transaction.status,
     });
-
   } catch (err: any) {
     console.error("❌ Checkout API error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
