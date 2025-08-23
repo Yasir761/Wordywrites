@@ -35,7 +35,7 @@ export default function RootLayout({
           <ClientOnly>{children}</ClientOnly>
         </body>
       </html>
-      {/* <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script> */}
+      
 
     </ClerkProvider>
   )
