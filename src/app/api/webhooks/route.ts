@@ -1,20 +1,29 @@
-import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  const event = await req.json();
+import { NextResponse } from "next/server";
+import crypto from "crypto";
 
-  console.log("LemonSqueezy Webhook Event:", event.type);
+function verifySignature(body: string, signature: string) {
+  const secret = process.env.PADDLE_WEBHOOK_SECRET!;
+  const hmac = crypto.createHmac("sha256", secret).update(body).digest("hex");
+  return hmac === signature;
+}
 
-  if (event.type === "subscription_created" || event.type === "subscription_updated") {
-    const userId = event.data.attributes.checkout_data.custom.userId;
-    const variantId = event.data.relationships.variant.data.id;
 
-    // Map variant ID to plan
-    const plan = variantId === process.env.LEMON_VARIANT_PRO ? "pro" : "free";
 
-    // Update your DB
-    // await updateUserPlan(userId, plan);
+
+
+
+
+
+
+export async function POST(req: Request) {
+  const rawBody = await req.text();
+  const signature = req.headers.get("paddle-signature") || "";
+
+  if (!verifySignature(rawBody, signature)) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  return NextResponse.json({ received: true });
+  const event = JSON.parse(rawBody);
+  console.log("✅ Verified Paddle webhook:", event.type);
 }

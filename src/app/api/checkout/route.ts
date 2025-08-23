@@ -1,52 +1,68 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-const LEMON_API_KEY = process.env.LEMON_API_KEY;
-const STORE_ID = process.env.LEMON_STORE_ID;
-
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { variantId, userId } = await req.json();
+    const body = await req.json();
+    const { priceId } = body;
 
-    if (!variantId || !userId) {
-      return NextResponse.json({ error: "Missing variantId or userId" }, { status: 400 });
+    console.log("Received request body:", body);
+
+    if (!priceId) {
+      return NextResponse.json({ error: "Price ID is required" }, { status: 400 });
     }
 
-    const res = await fetch("https://api.lemonsqueezy.com/v1/checkouts", {
+    console.log("Creating transaction with price ID:", priceId);
+
+    // Create a draft transaction using sandbox API
+    const transactionRes = await fetch("https://api.paddle.com/transactions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${LEMON_API_KEY}`,
+        Authorization: `Bearer ${process.env.PADDLE_PRODUCTION_API}`,
         "Content-Type": "application/json",
-        "Accept": "application/json",
       },
       body: JSON.stringify({
-        data: {
-          type: "checkouts",
-          attributes: {
-            checkout_data: { custom: { userId } },
-            checkout_options: { embed: false },
-          },
-          relationships: {
-            store: { data: { type: "stores", id: '203600' } },
-            variant: { data: { type: "variants", id: '951884' } },
-          },
-        },
+        items: [{ 
+          price_id: priceId, 
+          quantity: 1 
+        }]
       }),
     });
 
-    const data = await res.json().catch(() => null); // prevent JSON parse error
+    const transactionData = await transactionRes.json();
 
-    if (!res.ok || !data?.data?.attributes?.url) {
-      console.error("Lemon Squeezy API error:", data);
-      return NextResponse.json({ error: "Failed to create checkout" }, { status: 500 });
+    if (!transactionRes.ok) {
+      console.error("❌ Paddle Transaction API error:");
+      console.error("Status:", transactionRes.status);
+      console.error("Response:", JSON.stringify(transactionData, null, 2));
+      if (transactionData.error?.errors) {
+        console.error("Detailed errors:", JSON.stringify(transactionData.error.errors, null, 2));
+      }
+      return NextResponse.json({ error: transactionData }, { status: 500 });
     }
 
-    return NextResponse.json({ url: data.data.attributes.url });
+    const transaction = transactionData.data;
+    console.log("✅ Transaction created:", transaction.id, "Status:", transaction.status);
+    
+    // Get the checkout URL from the transaction
+    const checkoutUrl = transaction.checkout?.url;
+    
+    if (!checkoutUrl) {
+      console.error("❌ No checkout URL in transaction:", transaction);
+      return NextResponse.json({ 
+        error: "No checkout URL available" 
+      }, { status: 500 });
+    }
 
-  } catch (err) {
-    console.error("Checkout route error:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.log("✅ Checkout URL:", checkoutUrl);
+
+    return NextResponse.json({ 
+      transactionId: transaction.id,
+      checkoutUrl: checkoutUrl,
+      status: transaction.status
+    });
+
+  } catch (err: any) {
+    console.error("❌ Checkout API error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
- 
-
-// error ko sahi krna ik baar server run krkr

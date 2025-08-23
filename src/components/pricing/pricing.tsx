@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+
 const plans = [
   {
     name: 'Free',
@@ -44,7 +45,7 @@ const plans = [
     ],
     cta: 'Go Pro',
     highlight: true,
-    variantId: 123456, // <-- your actual Lemon Squeezy Pro plan variant ID
+    priceId: 'pri_01k3amkh5jpxnsb12by5ae99fw', 
   },
 ]
 
@@ -56,23 +57,42 @@ export default function Pricing() {
   }, [])
 
   if (!mounted) return null
+const handleCheckout = async (priceId?: string) => {
+  if (!priceId) return;
 
-  const handleCheckout = async (variantId?: number) => {
-    if (!variantId) return
+  try {
+    // Ask backend to create a Paddle transaction
     const res = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        variantId,
-        userId: 'example-user-id', // replace with logged-in user ID
+        priceId,
+        // Remove userId for now to create a draft transaction
+        // userId: 'example-user-id', 
       }),
-    })
+    });
 
-    const data = await res.json()
-    if (data.url) {
-      window.location.href = data.url
+    const data = await res.json();
+
+    if (data.error) {
+      console.error('Checkout error:', data.error);
+      alert('Error creating checkout. Please try again.');
+      return;
     }
+
+    if (data.checkoutUrl) {
+      // Redirect to Paddle's hosted checkout page
+      window.location.href = data.checkoutUrl;
+    } else {
+      console.error('No checkout URL received');
+      alert('Unable to create checkout. Please try again.');
+    }
+  } catch (error) {
+    console.error('Checkout failed:', error);
+    alert('Checkout failed. Please try again.');
   }
+};
+
 
   return (
     <section className="py-24 scroll-mt-28" id="pricing">
@@ -119,7 +139,7 @@ export default function Pricing() {
 
             <Button
               className="mt-6 w-full"
-              onClick={() => handleCheckout(plan.variantId)}
+              onClick={() => handleCheckout(plan.priceId)}
             >
               {plan.cta}
             </Button>
