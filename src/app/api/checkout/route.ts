@@ -30,7 +30,7 @@ export async function POST(req: Request) {
           },
         ],
         // ✅ Redirect URLs (make sure these routes exist in your Next.js app)
-        return_url: "https://wordywrites.app/success",
+        success_url: "https://wordywrites.app/success",
         cancel_url: "https://wordywrites.app/cancel",
       }),
     });

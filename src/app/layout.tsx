@@ -34,6 +34,7 @@ export default function RootLayout({
         <body className="font-sans bg-gradient-to-br from-[#f4f8ff] via-white to-[#fdf2f8] text-gray-800 min-h-screen antialiased">
           <ClientOnly>{children}</ClientOnly>
         </body>
+        
       </html>
       
 
