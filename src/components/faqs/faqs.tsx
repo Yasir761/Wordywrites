@@ -28,7 +28,7 @@ const faqs = [
   {
     question: 'Can I export my content?',
     answer:
-      'Yes — download as PDF, copy for Medium, or publish directly to WordPress with one click.',
+      'Yes — download, copy for Medium, or publish directly to WordPress with one click.',
   },
   {
     question: 'Will my data be stored or reused?',
