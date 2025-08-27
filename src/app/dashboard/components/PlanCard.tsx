@@ -18,7 +18,7 @@ export default function UserPlanCard() {
   // Initialize Paddle once on mount
   useEffect(() => {
     initializePaddle({
-      environment: "sandbox", // or "production" for live
+      environment: "production", // or "production" for live
       token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN!,
     }).then((paddleInstance) => setPaddle(paddleInstance))
   }, [])

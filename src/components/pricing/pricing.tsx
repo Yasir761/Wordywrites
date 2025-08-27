@@ -57,7 +57,7 @@ export default function Pricing() {
   // Initialize Paddle once on mount
   useEffect(() => {
     initializePaddle({
-      environment: "sandbox", // or "sandbox" while testing
+      environment: "production", // or "sandbox" while testing
       token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN!,
     }).then((paddleInstance) => setPaddle(paddleInstance))
   }, [])
