@@ -1,73 +1,119 @@
-// app/api/webhooks/paddle/route.ts
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { connectDB } from "@/app/api/utils/db";
+import { UserModel } from "@/app/models/user";
+
+function verifyPaddleSignature(rawBody: string, paddleSignature: string, secret: string) {
+  const parts = Object.fromEntries(
+    paddleSignature.split(";").map((p) => p.split("="))
+  );
+
+  const ts = parts["ts"];
+  const h1 = parts["h1"];
+  if (!ts || !h1) return false;
+
+  const signedPayload = `${ts}:${rawBody}`;
+  const computed = crypto
+    .createHmac("sha256", secret)
+    .update(signedPayload)
+    .digest("hex");
+
+  return crypto.timingSafeEqual(
+    Buffer.from(computed, "hex"),
+    Buffer.from(h1, "hex")
+  );
+}
 
 export async function POST(req: Request) {
   try {
-    // 1. Get signature header + raw body
     const paddleSignature = req.headers.get("paddle-signature") || "";
     const secretKey = process.env.PADDLE_WEBHOOK_SECRET;
 
     if (!paddleSignature || !secretKey) {
-      console.error("❌ Missing Paddle-Signature header or secret key");
+      console.error("❌ Missing signature or secret key");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const rawBody = await req.text();
 
-    // 2. Extract timestamp + h1 signature
-    const parts = paddleSignature.split(";");
-    const signatureMap: Record<string, string> = {};
-    for (const part of parts) {
-      const [key, value] = part.split("=");
-      signatureMap[key] = value;
-    }
-    const ts = signatureMap["ts"];
-    const h1 = signatureMap["h1"];
-
-    if (!ts || !h1) {
-      console.error("❌ Invalid Paddle-Signature format");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // 3. Build signed payload
-    const signedPayload = `${ts}:${rawBody}`;
-
-    // 4. Generate HMAC with secret
-    const computedSignature = crypto
-      .createHmac("sha256", secretKey)
-      .update(signedPayload)
-      .digest("hex");
-
-    // 5. Compare securely
-    const valid = crypto.timingSafeEqual(
-      Buffer.from(computedSignature, "hex"),
-      Buffer.from(h1, "hex")
-    );
-
+    const valid = verifyPaddleSignature(rawBody, paddleSignature, secretKey);
     if (!valid) {
-      console.error("❌ Invalid webhook signature");
+      console.error("❌ Invalid Paddle signature");
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    // ✅ Signature verified
     const event = JSON.parse(rawBody);
-    console.log("✅ Verified Paddle webhook:", event.event_type);
-    console.log("📦 Event data:", JSON.stringify(event.data, null, 2));
+    const { event_type, data } = event;
 
-    // Handle events
-    switch (event.event_type) {
-      case "transaction.completed":
-        console.log("💰 Payment completed:", event.data.id);
+    console.log("✅ Verified Paddle webhook:", event_type);
+    console.log("🔎 Webhook data:", JSON.stringify(data, null, 2));
+
+    await connectDB();
+
+    // Clerk userId (from custom_data)
+    const userId = data?.custom_data?.userId;
+    const paddleCustomerId = data?.customer_id;
+    const subscriptionId = data?.id;
+    const productId = data?.items?.[0]?.price?.product_id;
+
+    switch (event_type) {
+      case "transaction.completed": {
+        if (!userId) {
+          console.error("⚠️ No Clerk userId in custom_data, cannot map user.");
+          break;
+        }
+
+        // ✅ Save only Paddle CustomerId here
+        await UserModel.findOneAndUpdate(
+          { userId },
+          { ...(paddleCustomerId && { paddleCustomerId }) },
+          { new: true }
+        );
+
+        console.log(`💰 Transaction completed for user: ${userId}`);
         break;
-      case "transaction.payment_failed":
-        console.log("❌ Payment failed:", event.data.id);
+      }
+
+      case "subscription.activated": {
+        if (!userId) {
+          console.error("⚠️ No Clerk userId in subscription webhook.");
+          break;
+        }
+
+        const user = await UserModel.findOneAndUpdate(
+          { userId },
+          {
+            plan: productId === "pro_01k3drvrme1ccrvxs07fyw5q7d" ? "Pro" : "Free",
+            credits: productId === "pro_01k3drvrme1ccrvxs07fyw5q7d" ? 999 : 5,
+            ...(subscriptionId && { paddleSubscriptionId: subscriptionId }),
+          },
+          { new: true }
+        );
+
+        if (user) {
+          console.log(`🎉 Subscription activated: ${user.email} → ${user.plan}`);
+        }
         break;
-      case "subscription.created":
-        console.log("🔄 Subscription created:", event.data.id);
+      }
+
+      case "subscription.canceled": {
+        if (!userId) {
+          console.error("⚠️ No Clerk userId in cancel webhook.");
+          break;
+        }
+
+        await UserModel.findOneAndUpdate(
+          { userId },
+          { plan: "Free", credits: 5, paddleSubscriptionId: null },
+          { new: true }
+        );
+
+        console.log(`🔒 Subscription canceled. User downgraded: ${userId}`);
         break;
+      }
+
       default:
-        console.log("ℹ️ Unhandled event:", event.event_type);
+        console.log("ℹ️ Unhandled event:", event_type);
     }
 
     return NextResponse.json({ received: true });

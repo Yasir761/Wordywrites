@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
-
+import { auth } from "@clerk/nextjs/server"
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth()
+     if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await req.json();
     const { priceId } = body;
 
@@ -23,19 +27,24 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        
         items: [
           {
             price_id: priceId,
             quantity: 1,
           },
         ],
+        custom_data:{
+          userId: String(userId)
+        },
         // ✅ Redirect URLs (make sure these routes exist in your Next.js app)
-        success_url: "https://wordywrites.app/success",
-        cancel_url: "https://wordywrites.app/cancel",
+        success_url: "http://localhost:3000/dashboard",
+        cancel_url: "http://localhost:3000/cancel",
       }),
     });
 
     const transactionData = await transactionRes.json();
+    console.log("Paddle Transaction API response:", transactionData);
 
     if (!transactionRes.ok) {
       console.error("❌ Paddle Transaction API error:");

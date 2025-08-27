@@ -19,7 +19,7 @@ export const PLANS = {
     name: "Pro",
     price: 9.99,
     monthlyCredits: Infinity,
-    aiAgents: ["keyword", "blueprint", "tone", "seo", "hashtags", "blog", "analyze", "teaser", "crawl"],
+    aiAgents: ["keyword", "blueprint", "tone", "seo", "hashtags", "blog", "analyze", "contentpreview", "crawl"],
     integrations: ["wordpress"],
     features: ["Everything Unlimited", "All integrations", "Crawl competitor blogs"],
   },
@@ -29,14 +29,11 @@ export const PLANS = {
 
 
 
-export const LEMON_VARIANTS = {
-  FREE: "951873", 
-  PRO: "951884",
-};
 
 
 
 
-// plans =609841
+
+
 
 

@@ -101,7 +101,7 @@ export default function PublishBlogPage() {
       }
 
       if (data.editLink) {
-        window.open(data.editLink, "_blank"); 
+        window.open(data.editLink, "_blank");
       } else {
         setError("No edit link returned from server");
         setLoading(false);
@@ -135,14 +135,62 @@ export default function PublishBlogPage() {
         Publish to WordPress
       </motion.h1>
 
-      {/* Credentials and Blog Preview */}
-      {/* ... keep all input and textarea code unchanged ... */}
+      {plan === "Pro" && (
+        <div className="space-y-6">
+          {/* Site URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Site URL</label>
+            <input
+              type="url"
+              value={siteUrl}
+              onChange={(e) => setSiteUrl(e.target.value)}
+              placeholder="https://yourblog.com"
+              className="mt-1 w-full p-3 border rounded-lg"
+            />
+          </div>
 
+          {/* Username */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="your-username"
+              className="mt-1 w-full p-3 border rounded-lg"
+            />
+          </div>
+
+          {/* App Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">App Password</label>
+            <input
+              type="password"
+              value={appPassword}
+              onChange={(e) => setAppPassword(e.target.value)}
+              placeholder="Application password"
+              className="mt-1 w-full p-3 border rounded-lg"
+            />
+          </div>
+
+          {/* Blog Preview */}
+          <div>
+            <h2 className="text-xl font-semibold">Blog Preview</h2>
+            <h3 className="text-lg font-bold">{title}</h3>
+            <div
+              className="prose max-w-none mt-2"
+              dangerouslySetInnerHTML={{ __html: content }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Publish Button */}
       <motion.button
         whileHover={{ scale: loading ? 1 : 1.03 }}
         whileTap={{ scale: loading ? 1 : 0.97 }}
         onClick={handlePublish}
-        disabled={loading || plan !== "Pro"} // disable for Free users
+        disabled={loading || plan !== "Pro"}
         className="w-full py-4 rounded-xl text-lg font-semibold text-white bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {loading ? (
