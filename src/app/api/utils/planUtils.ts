@@ -15,21 +15,42 @@ import { UserModel } from "@/app/models/user"; // or wherever you store user sub
 
 
 
-export const getUserPlan = async (userId: string) => {
-  try {
-    console.log("getUserPlan CALLED with userId:", userId);
-    const user = await UserModel.findOne({ userId });
-    console.log("User from DB:", user);
+// export const getUserPlan = async (userId: string) => {
+//   try {
+//     console.log("getUserPlan CALLED with userId:", userId);
+//     const user = await UserModel.findOne({ userId });
+//     console.log("User from DB:", user);
 
-    const planName = (user?.plan || "Free") as keyof typeof PLANS;
-    console.log("Resolved planName:", planName);
+//     const planName = (user?.plan || "Free") as keyof typeof PLANS;
+//     console.log("Resolved planName:", planName);
 
-    const plan = PLANS[planName] || PLANS["Free"];
-    console.log("Resolved plan object:", plan);
+//     const plan = PLANS[planName] || PLANS["Free"];
+//     console.log("Resolved plan object:", plan);
 
-    return plan;
-  } catch (err) {
-    console.error("❌ getUserPlan error:", err);
-    return PLANS["Free"];
+//     return plan;
+//   } catch (err) {
+//     console.error("❌ getUserPlan error:", err);
+//     return PLANS["Free"];
+//   }
+// };
+
+
+
+export async function getUserPlan(userId: string, email?: string) {
+  let user = await UserModel.findOne({ $or: [{ userId }, { email }] });
+
+  if (!user) {
+    user = new UserModel({
+      userId,
+      email: email || "",
+      plan: "Free",
+      credits: 5,
+      blogsGeneratedThisMonth: 0,
+      lastBlogReset: new Date(),
+    });
+    await user.save();
   }
-};
+
+  const planName = user.plan as keyof typeof PLANS;
+  return PLANS[planName];
+}
