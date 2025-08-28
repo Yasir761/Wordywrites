@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 
 
-const TeaserAgentSchema = new mongoose.Schema(
+const ContentPreviewAgentSchema = new mongoose.Schema(
   {
     teasers: { type: [String], default: [] },
     hashtags: { type: [String], default: [] },
@@ -57,7 +57,7 @@ const BlogSchema = new mongoose.Schema({
   },
 
   // NEW: Teaser Agent
- teaserAgent: TeaserAgentSchema,
+ ContentPreviewAgent: ContentPreviewAgentSchema,
 
   status: {
     type: String,

@@ -324,7 +324,7 @@ const AGENT_ENDPOINTS = {
   hashtags: "/api/agents/hashtags",
   seo: "/api/agents/seo-optimizer",
   blog: "/api/agents/blog",
-  teaser: "/api/agents/teaser",
+  contentpreview: "/api/agents/contentpreview",
 };
 
 export async function POST(req: NextRequest) {
@@ -439,7 +439,7 @@ export async function POST(req: NextRequest) {
         analyze,
       });
       const crawlData = crawlUrl ? await callAgent("crawl", { url: crawlUrl }) : null;
-      const teaserData = await callAgent("teaser", {
+      const contentpreviewData = await callAgent("contentpreview", {
         title: seo.optimized_title || keyword,
         content: writerData.blog,
       });
@@ -457,7 +457,7 @@ export async function POST(req: NextRequest) {
         },
         analyzeAgent: analyze,
         crawlAgent: crawlData,
-        teaserAgent: teaserData,
+        contentpreviewAgent: contentpreviewData,
         status: "draft",
         createdAt: new Date(),
       });
@@ -471,7 +471,7 @@ export async function POST(req: NextRequest) {
       seo: saved.seoAgent || null,
       tone: saved.toneAgent?.tone || null,
       voice: saved.toneAgent?.voice || null,
-      teaser: saved.teaserAgent || null,
+      contentpreview: saved.ContentPreviewAgent || null,
     });
   } catch (err: any) {
     console.error("💥 Orchestrator error:", err);
