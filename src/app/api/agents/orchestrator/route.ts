@@ -334,6 +334,15 @@ export async function POST(req: NextRequest) {
   }
 
   const user = await clerkClient.users.getUser(userId).catch(() => null);
+  const email = user?.emailAddresses?.[0]?.emailAddress;
+
+await connectDB();
+await UserModel.findOneAndUpdate(
+  { userId },
+  { userId, email },
+  { upsert: true, new: true, setDefaultsOnInsert: true }
+);
+
   const emailVerified = user?.emailAddresses?.[0]?.verification?.status === "verified";
   if (!emailVerified) {
     return NextResponse.json({ error: "Email not verified" }, { status: 403 });
