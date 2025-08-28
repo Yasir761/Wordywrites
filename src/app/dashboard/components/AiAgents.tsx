@@ -191,7 +191,7 @@ export default function AIAgentsPanel() {
         const data = await res.json();
 
         // 2. Fetch current user plan
-        const planRes = await fetch("/api/get-plan");
+        const planRes = await fetch("/api/user/plan");
         const planData = await planRes.json();
 
         setAgents(data.agents || []);
@@ -250,7 +250,7 @@ export default function AIAgentsPanel() {
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-gray-800 dark:text-white">
-                        {AGENT_LABELS[agent.key.toLowerCase()] || agent.name}
+                        {AGENT_LABELS[agent.key?.toLowerCase() || ""] || agent.name}
                       </div>
                     </div>
                   </div>
