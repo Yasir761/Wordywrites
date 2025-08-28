@@ -338,7 +338,7 @@ export async function POST(req: NextRequest) {
 
 await connectDB();
 await UserModel.findOneAndUpdate(
-  { userId },
+  { email },
   { userId, email },
   { upsert: true, new: true, setDefaultsOnInsert: true }
 );
@@ -466,7 +466,7 @@ await UserModel.findOneAndUpdate(
         },
         analyzeAgent: analyze,
         crawlAgent: crawlData,
-        contentpreviewAgent: contentpreviewData,
+        ContentPreviewAgent: contentpreviewData,
         status: "draft",
         createdAt: new Date(),
       });
