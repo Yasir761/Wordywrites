@@ -4,6 +4,8 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
   // '/api/agents(.*)',
+  '/contact(.*)',
+  '/contact',
   
 ]);
 
@@ -22,6 +24,8 @@ export default clerkMiddleware(async (auth, req) => {
   if (userId && req.nextUrl.pathname.startsWith('/api/agents')) {
     req.headers.set('x-user-id', userId);
   }
+
+  
 
 });
 

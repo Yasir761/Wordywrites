@@ -38,8 +38,8 @@ export async function POST(req: Request) {
           userId: String(userId)
         },
         // ✅ Redirect URLs (make sure these routes exist in your Next.js app)
-        success_url: "http://localhost:3000/dashboard",
-        cancel_url: "http://localhost:3000/cancel",
+        success_url: "http://wordywrites.app/dashboard",
+        // cancel_url: "http://localhost:3000/cancel",
       }),
     });
 
