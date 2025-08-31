@@ -92,6 +92,14 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
         <head>
+          {/* TrackTheMetric Script */}
+          <script
+  id="TrackTheMetric"
+  data-website-id="c9e67e29-5db9-4448-b593-ae942ec8d335"
+  data-domain="wordywrites.app"
+  src="https://app.trackthemetric.com/tracker.js"
+  defer
+></script>
           {/* Google Analytics Script */}
           <Script
             strategy="afterInteractive"

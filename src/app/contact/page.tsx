@@ -9,26 +9,32 @@ import Link from 'next/link'
 export default function ContactPage() {
   const [status, setStatus] = useState('')
 
-  const handleSubmit = async (e: any) => {
-    e.preventDefault()
-    setStatus('Sending...')
+const handleSubmit = async (e: any) => {
+  e.preventDefault()
+  setStatus('Sending...')
 
-    const form = new FormData(e.target)
-    const res = await fetch('https://formspree.io/f/mblkoqwq', {
-      method: 'POST',
-      body: form,
-      headers: {
-        Accept: 'application/json',
-      },
-    })
+  const form = new FormData(e.target)
+  const res = await fetch('/api/contact', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: form.get('name'),
+      email: form.get('email'),
+      message: form.get('message'),
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
 
-    if (res.ok) {
-      setStatus('✅ Message sent successfully!')
-      e.target.reset()
-    } else {
-      setStatus('❌ Oops! Something went wrong.')
-    }
+  if (res.ok) {
+    setStatus('✅ Message sent successfully!')
+    e.target.reset()
+  } else {
+    setStatus('⚠️ Please log in or sign up to continue.')
   }
+}
+
+
 
   return (
     <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-100 px-4">
