@@ -62,19 +62,19 @@ export async function POST(req: NextRequest) {
     let intent, toneVoice, seo;
     try {
       [intent, toneVoice, seo] = await Promise.all([
-        fetch("http://localhost:3000/api/agents/keyword", {
+        fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/agents/keyword`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ keyword: title }),
         }).then(res => res.json()),
 
-        fetch("http://localhost:3000/api/agents/tone", {
+        fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/agents/tone`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ keyword: title }),
         }).then(res => res.json()),
 
-        fetch("http://localhost:3000/api/agents/seo-optimizer", {
+        fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/agents/seo-optimizer`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

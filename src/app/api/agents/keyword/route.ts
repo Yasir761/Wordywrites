@@ -22,7 +22,7 @@ const cache = new Map<string, KeywordIntent>();
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "llama3-8b-8192",
+      model: "openai/gpt-oss-20b",
       messages: [
         { role: "system", content: "You are a precise SEO keyword intent analyzer." },
         { role: "user", content: prompt },

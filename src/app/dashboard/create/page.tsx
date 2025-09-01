@@ -42,7 +42,7 @@ interface BlogData {
     final_hashtags?: string[];
   };
   blog?: string;
-  teaser?: {
+  contentpreview?: {
     teasers: string[];
     hashtags: string[];
     engagementCTA: string;
@@ -248,12 +248,12 @@ export default function BlogGenerator() {
             </div>
 
             {/* Teaser Section (locked for Free) */}
-            {blogData.teaser && (
+            {blogData.contentpreview && (
               <FeatureLock isLocked={userPlan === "Free"}>
                 <TeaserSection
-                  teasers={blogData.teaser.teasers}
-                  hashtags={blogData.teaser.hashtags}
-                  engagementCTA={blogData.teaser.engagementCTA}
+                  teasers={blogData.contentpreview.teasers}
+                  hashtags={blogData.contentpreview.hashtags}
+                  engagementCTA={blogData.contentpreview.engagementCTA}
                 />
               </FeatureLock>
             )}

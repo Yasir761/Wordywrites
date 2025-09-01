@@ -41,7 +41,7 @@ export default function TeaserSection({
           <div className="flex items-center space-x-3">
             <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
             <h3 className="text-sm font-semibold text-yellow-600 uppercase tracking-wider">
-              Teasers
+              Content Preview
             </h3>
           </div>
           {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
