@@ -5,6 +5,7 @@ import {
   IconCreditCard,
   IconDotsVertical,
   IconLogout,
+  IconMessageCircle,
   IconNotification,
   IconUserCircle,
 } from "@tabler/icons-react"
@@ -97,20 +98,18 @@ export function NavUser({
 
             <DropdownMenuSeparator className="bg-gray-200" />
 
-            {/* <DropdownMenuGroup>
-              <DropdownMenuItem className="hover:bg-purple-50/80 transition">
-                <IconUserCircle className="size-4 mr-2 text-purple-500" />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem className="hover:bg-purple-50/80 transition">
-                <IconCreditCard className="size-4 mr-2 text-green-500" />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem className="hover:bg-purple-50/80 transition">
-                <IconNotification className="size-4 mr-2 text-cyan-500" />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup> */}
+            <DropdownMenuGroup>
+  <DropdownMenuItem asChild className="hover:bg-purple-100/70 transition-all rounded-lg">
+    <a href="/contact" className="flex items-center gap-3">
+      {/* Contact Avatar-style icon */}
+      {/* <div className="h-7 w-7 flex items-center justify-center rounded-md bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-sm">
+        <IconNotification className="size-4" />
+      </div> */}
+      <IconMessageCircle className="size-4 text-blue-700" />
+      <span className="font-medium text-blue-700">Contact</span>
+    </a>
+  </DropdownMenuItem>
+</DropdownMenuGroup>
 
             <DropdownMenuSeparator className="bg-gray-200" />
 
