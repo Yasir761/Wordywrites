@@ -1,23 +1,20 @@
 import { NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"  // enable if you want Clerk auth
 
 export async function POST(req: Request) {
-    try {
-     
-    // ✅ (Optional) require auth
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  try {
+    const { name, email, message, website } = await req.json()
+
+    // 🚨 Honeypot check
+    if (website) {
+      return NextResponse.json({ error: "Spam detected" }, { status: 400 })
     }
 
-    const { name, email, message } = await req.json()
-
-    // ✅ (Optional) simple anti-spam: block empty or too-long submissions
+    // 🚨 Validate fields
     if (!name || !email || !message || message.length > 2000) {
       return NextResponse.json({ error: "Invalid submission" }, { status: 400 })
     }
 
-    // Forward to Formspree (or another provider)
+    // Forward to Formspree
     const res = await fetch("https://formspree.io/f/mblkoqwq", {
       method: "POST",
       headers: { Accept: "application/json" },
