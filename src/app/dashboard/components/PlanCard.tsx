@@ -155,7 +155,7 @@ const handleUpgrade = async () => {
               {upgradeLoading ? "Starting checkout..." : "Upgrade to Pro"}
             </Button>
           ) : (
-            <span className="font-medium text-foreground">Enjoy unlimited blogs 🚀</span>
+            <span className="font-medium text-foreground">Enjoy unlimited blogs</span>
           )}
           <span className="text-xs">Tracked in real-time</span>
         </CardFooter>
