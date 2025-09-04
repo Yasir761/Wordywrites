@@ -150,3 +150,27 @@
   scrollbar-width: thin;
   scrollbar-color: #a5b4fc #f3f4f6;
 }
+
+
+
+
+.ProseMirror h1 {
+  font-size: 1.75rem; /* ~28px */
+  font-weight: 700;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
