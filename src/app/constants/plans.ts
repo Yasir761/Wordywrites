@@ -6,6 +6,7 @@ export const PLANS = {
     aiAgents: [ "keyword","blog", "blueprint" ],
     integrations: [],
     features: ["Basic blog generation"],
+    maxProfiles: 0, // ✅ Free users get only 1 profile
   },
   // Starter: {
   //   name: "Starter",
@@ -22,6 +23,8 @@ export const PLANS = {
     aiAgents: ["keyword", "blueprint", "tone", "seo", "hashtags", "blog", "analyze", "contentpreview", "crawl"],
     integrations: ["wordpress"],
     features: ["Everything Unlimited", "All integrations", "Crawl competitor blogs"],
+    maxProfiles: Infinity, // ✅ unlimited
+
   },
 
 
