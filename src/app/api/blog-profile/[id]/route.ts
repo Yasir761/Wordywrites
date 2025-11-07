@@ -3,14 +3,18 @@ import { connectDB } from "@/app/api/utils/db";
 import { BlogProfileModel } from "@/app/models/blogprofile";
 import { auth } from "@clerk/nextjs/server";
 
-//  GET single profile
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+type RouteContext = {
+  params: Record<string, string>;
+};
+
+// ✅ GET single profile
+export async function GET(req: NextRequest, context: RouteContext) {
   try {
     await connectDB();
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { id } = context.params;
+    const id = context.params.id;
     const profile = await BlogProfileModel.findOne({ _id: id, userId });
 
     if (!profile) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -21,13 +25,13 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
 }
 
 // ✅ PUT update profile
-export async function PUT(req: NextRequest, context: { params: { id: string } }) {
+export async function PUT(req: NextRequest, context: RouteContext) {
   try {
     await connectDB();
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { id } = context.params;
+    const id = context.params.id;
     const body = await req.json();
 
     const profile = await BlogProfileModel.findOneAndUpdate({ _id: id, userId }, body, { new: true });
@@ -40,13 +44,13 @@ export async function PUT(req: NextRequest, context: { params: { id: string } })
 }
 
 // ✅ DELETE profile
-export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, context: RouteContext) {
   try {
     await connectDB();
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { id } = context.params;
+    const id = context.params.id;
     await BlogProfileModel.findOneAndDelete({ _id: id, userId });
 
     return NextResponse.json({ success: true });
