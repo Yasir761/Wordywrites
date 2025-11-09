@@ -1,65 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPrompt } from "./prompt";
 import { ToneSchema } from "./schema";
+import { cachedAgent, deleteCacheKey } from "@/lib/cache"; //  added cache helpers
 
-export async function POST(req: NextRequest) {
-  const { keyword } = await req.json();
+//  Core tone generation logic
+async function generateTone(keyword: string) {
+  const prompt = createPrompt(keyword);
 
-  if (!keyword) {
-    return NextResponse.json({ error: "Missing keyword" }, { status: 400 });
+  const aiRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "openai/gpt-oss-20b",
+      messages: [
+        { role: "system", content: "You are a blog tone and voice strategist." },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.4,
+    }),
+  });
+
+  const data = await aiRes.json();
+  const raw = data.choices?.[0]?.message?.content?.trim();
+
+  if (!raw) throw new Error("No AI output received.");
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    console.error(" Tone JSON parse failed:", err, "\nRaw output:", raw);
+    throw new Error("Invalid JSON format from model");
   }
 
+  const validated = ToneSchema.safeParse(parsed);
+  if (!validated.success) {
+    console.error(" Tone schema validation failed:", validated.error.format());
+    throw new Error("Schema validation failed");
+  }
+
+  return validated.data;
+}
+
+//  API Route
+export async function POST(req: NextRequest) {
   try {
-    const prompt = createPrompt(keyword);
+    const body = await req.json();
+    const { keyword, regenerate = false } = body;
 
-    const aiRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-20b",
-        messages: [
-          { role: "system", content: "You are a blog tone and voice strategist." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.4,
-      }),
-    });
-
-    const data = await aiRes.json();
-    const raw = data.choices?.[0]?.message?.content?.trim();
-
-    if (!raw) {
-      return NextResponse.json({ error: "No AI output received." }, { status: 500 });
+    if (!keyword) {
+      return NextResponse.json({ error: "Missing keyword" }, { status: 400 });
     }
 
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch (err) {
-      console.error("❌ Tone JSON parse failed:", err, "\nRaw output:", raw);
-      return NextResponse.json({
-        error: "Model returned invalid JSON.",
-        raw
-      }, { status: 500 });
+    //  Cache key — unique per keyword
+    const cacheKey = `agent:tone:${keyword.toLowerCase()}`;
+
+    //  Optional regenerate
+    if (regenerate) {
+      await deleteCacheKey(cacheKey);
+      console.log(`♻️ Cache cleared for tone agent: ${keyword}`);
     }
 
-    const validated = ToneSchema.safeParse(parsed);
+    //  Use cachedAgent (6-hour TTL)
+    const result = await cachedAgent(
+      cacheKey,
+      () => generateTone(keyword),
+      60 * 60 * 6 // 6 hours TTL
+    );
 
-    if (!validated.success) {
-      console.error("❌ Tone schema validation failed:", validated.error.format());
-      return NextResponse.json({
-        error: "Invalid tone/voice format",
-        issues: validated.error.flatten(),
-        raw: parsed
-      }, { status: 422 });
-    }
-
-    return NextResponse.json({ keyword, ...validated.data });
+    return NextResponse.json({ keyword, ...result });
   } catch (err) {
-    console.error("💥 Tone Agent error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error(" Tone Agent Error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message || "Internal server error" }, { status: 500 });
   }
 }

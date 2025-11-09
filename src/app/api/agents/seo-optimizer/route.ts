@@ -1,77 +1,77 @@
 import { NextRequest, NextResponse } from "next/server";
-// import { auth } from "@clerk/nextjs/server";
-// import { checkAndConsumeCredit } from "@/app/api/utils/useCredits";
 import { createPrompt } from "./prompt";
 import { SEOOptimizerSchema } from "./schema";
+import { cachedAgent, deleteCacheKey } from "@/lib/cache"; //  added cache helpers
 
-export async function POST(req: NextRequest) {
-  const { keyword, outline, tone, voice, tags } = await req.json();
+//  Core LLM generation logic (used by cachedAgent)
+async function generateSEOOptimization(keyword: string, outline: string[], tone: string, voice: string, tags: string[]) {
+  const prompt = createPrompt(keyword, outline, tone, voice, tags);
 
-  if (!keyword || !outline || !tone || !voice || !tags) {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini", // lightweight + cheaper
+      messages: [
+        { role: "system", content: "You are an SEO blog optimizer." },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.4,
+    }),
+  });
+
+  const json = await aiRes.json();
+  const output = json.choices?.[0]?.message?.content?.trim() || "";
+
+  //  Validate structured JSON from model
+  let parsed;
+  try {
+    parsed = JSON.parse(output);
+  } catch {
+    throw new Error("Invalid JSON output from model");
   }
 
+  const validated = SEOOptimizerSchema.safeParse(parsed);
+  if (!validated.success) {
+    console.error(" SEO validation failed:", validated.error.flatten());
+    throw new Error("Schema validation failed");
+  }
+
+  return validated.data;
+}
+
+//  API Route
+export async function POST(req: NextRequest) {
   try {
-    // 🔐 Auth & get email from Clerk
-    // const { userId } = await auth();
+    const body = await req.json();
+    const { keyword, outline, tone, voice, tags, regenerate = false } = body;
 
-    // if (!userId) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
-
-    // const userRes = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
-    //   headers: {
-    //     Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
-    //   },
-    // });
-
-    // const user = await userRes.json();
-    // const email = user?.email_addresses?.[0]?.email_address;
-
-    // if (!email) {
-    //   return NextResponse.json({ error: "User email not found" }, { status: 403 });
-    // }
-
-    // ✅ Enforce pricing (Free plan blocked after 0 credits)
-    // await checkAndConsumeCredit(email, { allowOnly: ["Starter", "Pro"] });
-
-    // 🧠 Create prompt
-    const prompt = createPrompt(keyword, outline, tone, voice, tags);
-
-    // 🤖 Call OpenAIa
-    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "You are an SEO blog optimizer." },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.4,
-      }),
-    });
-
-    const json = await aiRes.json();
-    const output = json.choices?.[0]?.message?.content?.trim() || "";
-
-    const validated = SEOOptimizerSchema.safeParse(JSON.parse(output));
-
-    if (!validated.success) {
-      console.error("❌ SEO validation failed:", validated.error.flatten());
-      return NextResponse.json({
-        error: "Validation failed",
-        raw: output,
-        issues: validated.error.flatten(),
-      }, { status: 422 });
+    if (!keyword || !outline || !tone || !voice || !tags) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    return NextResponse.json(validated.data);
-  } catch (err) {
-    console.error("💥 SEO Optimizer Agent Error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const cacheKey = `agent:seo:${keyword.toLowerCase()}:${tone.toLowerCase()}:${voice.toLowerCase()}`;
+
+    //  Handle regenerate requests
+    if (regenerate) {
+      await deleteCacheKey(cacheKey);
+      console.log(` Cache cleared for SEO agent: ${keyword}`);
+    }
+
+    //  Use cachedAgent helper (12-hour TTL)
+    const result = await cachedAgent(
+      cacheKey,
+      () => generateSEOOptimization(keyword, outline, tone, voice, tags),
+      60 * 60 * 12 // 12 hours TTL
+    );
+
+    return NextResponse.json(result);
+  } catch (err: unknown) {
+    console.error(" SEO Optimizer Agent Error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message || "Internal server error" }, { status: 500 });
   }
 }

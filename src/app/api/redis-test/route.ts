@@ -1,10 +1,13 @@
+
 import { redis } from "@/lib/redis";
+import { NextResponse } from "next/server";
 
 export async function GET() {
-  await redis.set("hello", "world");
-  const value = await redis.get("hello");
-  return Response.json({ value });
+  console.time("PING");
+  await redis.ping();
+  console.timeEnd("PING");
+  console.time("GET");
+  await redis.get("test-key");
+  console.timeEnd("GET");
+  return NextResponse.json({ ok: true });
 }
-
-
-// this is for testing and can be deleted later 

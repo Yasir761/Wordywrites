@@ -75,12 +75,18 @@
 
 
 
+
+
 import { NextRequest, NextResponse } from "next/server";
 import { createPrompt } from "./prompt";
 import { KeywordIntentSchema } from "./schema";
 import { z } from "zod";
 import { redis } from "@/lib/redis";
 import { cachedAgent, deleteCacheKey } from "@/lib/cache"; //  using your shared helper
+
+
+
+
 
 type KeywordIntent = z.infer<typeof KeywordIntentSchema>;
 
@@ -133,6 +139,7 @@ async function generateKeywordIntent(keyword: string): Promise<KeywordIntent> {
  *  API Route (POST)
  */
 export async function POST(req: NextRequest) {
+  
   try {
     const { keyword, regenerate = false } = await req.json();
 
@@ -145,16 +152,19 @@ export async function POST(req: NextRequest) {
     // Handle regenerate (force new LLM call)
     if (regenerate) {
       await deleteCacheKey(cacheKey);
-      console.log(`♻️ Cache cleared for ${keyword}`);
+      console.log(` Cache cleared for ${keyword}`);
     }
 
     //  Use cachedAgent helper (12-hour TTL)
+    console.time("TOTAL_REQUEST");
+console.time("REDIS_GET");
     const data = await cachedAgent<KeywordIntent>(
       cacheKey,
       () => generateKeywordIntent(keyword),
       60 * 60 * 12
     );
-
+console.timeEnd("REDIS_GET");
+console.timeEnd("TOTAL_REQUEST");
     //  Add flag so frontend can tell if cached or not
     const cachedFlag = await (async () => {
       const allKeys = await redis.smembers("wordywrites:cached_keys");
