@@ -77,8 +77,6 @@
 
 
 
-
-
 import { NextRequest, NextResponse } from "next/server";
 import { createPrompt } from "./prompt";
 import { BlogOutlineSchema } from "./schema";
@@ -87,82 +85,99 @@ import {
   isWithinTokenLimit,
   splitTextByTokenLimit,
 } from "@/app/api/utils/tokenUtils";
+import { cachedAgent, deleteCacheKey } from "@/lib/cache"; // ✅ added caching helpers
 
 const MAX_TOKENS = 2048;
 
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { keyword, tone } = body;
+//  LLM generation logic (used by cachedAgent)
+async function generateBlueprint(keyword: string, tone: string): Promise<string[]> {
+  const prompt = createPrompt(keyword, tone);
 
-  // 🎯 Allow Free plan to skip tone
-  const finalKeyword = keyword || "general topic";
-  const finalTone = tone || "neutral";
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "openai/gpt-oss-20b",
+      messages: [
+        {
+          role: "system",
+          content: "You are a concise blog strategist. Do not generate paragraphs.",
+        },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.4,
+    }),
+  });
 
-  const prompt = createPrompt(finalKeyword, finalTone);
+  const data = await response.json();
+  const rawOutput = data.choices?.[0]?.message?.content || "";
 
-  if (!isWithinTokenLimit(prompt, MAX_TOKENS)) {
-    const trimmed = splitTextByTokenLimit(prompt, MAX_TOKENS)[0] || "";
-    console.warn("⚠️ Prompt too long. Using trimmed version.");
-    return NextResponse.json(
-      {
-        warning: "Prompt exceeded token limit. Please shorten input.",
-        trimmedPrompt: trimmed,
-        tokens: countTokens(trimmed),
-      },
-      { status: 413 }
+  //  Clean and dedupe bullet points
+  const outline = rawOutput
+    .split(/\n|•|-/)
+    .map((line: string) => line.trim())
+    .filter(
+      (line: string, i: number, arr: string[]) =>
+        line.length > 4 && arr.indexOf(line) === i
     );
+
+  //  Validate structure
+  const result = BlogOutlineSchema.safeParse({ outline });
+  if (!result.success) {
+    console.error(" Outline validation failed:", result.error.format());
+    throw new Error("Invalid blog outline format");
   }
 
+  return result.data.outline;
+}
+
+export async function POST(req: NextRequest) {
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-20b",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a concise blog strategist. Do not generate paragraphs.",
-          },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.4,
-      }),
-    });
+    const body = await req.json();
+    const { keyword, tone, regenerate = false } = body;
 
-    const data = await response.json();
-    const rawOutput = data.choices?.[0]?.message?.content || "";
+    const finalKeyword = keyword || "general topic";
+    const finalTone = tone || "neutral";
 
-    // 💡 Clean + dedupe bullet points
-    const outline = rawOutput
-      .split(/\n|•|-/)
-      .map((line: string) => line.trim())
-      .filter(
-        (line: string, i: number, arr: string[]) =>
-          line.length > 4 && arr.indexOf(line) === i
-      );
+    const prompt = createPrompt(finalKeyword, finalTone);
 
-    const result = BlogOutlineSchema.safeParse({ outline });
-
-    if (!result.success) {
-      console.error("❌ Outline validation failed:", result.error.format());
+    //  Token safety check (keep your existing logic)
+    if (!isWithinTokenLimit(prompt, MAX_TOKENS)) {
+      const trimmed = splitTextByTokenLimit(prompt, MAX_TOKENS)[0] || "";
+      console.warn(" Prompt too long. Using trimmed version.");
       return NextResponse.json(
         {
-          error: "Invalid blog outline format.",
-          raw: rawOutput,
-          issues: result.error.flatten(),
+          warning: "Prompt exceeded token limit. Please shorten input.",
+          trimmedPrompt: trimmed,
+          tokens: countTokens(trimmed),
         },
-        { status: 422 }
+        { status: 413 }
       );
     }
 
-    return NextResponse.json({ keyword: finalKeyword, outline: result.data.outline });
-  } catch (err) {
-    console.error("💥 Blueprint Agent Error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    //  Cache key = unique per keyword + tone
+    const cacheKey = `agent:blueprint:${finalKeyword.toLowerCase()}:${finalTone.toLowerCase()}`;
+
+    //  Optional regenerate
+    if (regenerate) {
+      await deleteCacheKey(cacheKey);
+      console.log(` Cache cleared for blueprint: ${finalKeyword}`);
+    }
+
+    //  Use cachedAgent (6-hour TTL)
+    const outline = await cachedAgent<string[]>(
+      cacheKey,
+      () => generateBlueprint(finalKeyword, finalTone),
+      60 * 60 * 6
+    );
+
+    return NextResponse.json({ keyword: finalKeyword, outline });
+  } catch (err: unknown) {
+    console.error(" Blueprint Agent Error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message || "Internal server error" }, { status: 500 });
   }
 }

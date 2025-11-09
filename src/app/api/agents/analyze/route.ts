@@ -1,101 +1,114 @@
-import { NextRequest, NextResponse } from "next/server"
-import { createPrompt } from "./prompt"
-import { AnalyzeAgentSchema } from "./schema"
+import { NextRequest, NextResponse } from "next/server";
+import { createPrompt } from "./prompt";
+import { AnalyzeAgentSchema } from "./schema";
 import {
   isWithinTokenLimit,
-  splitTextByTokenLimit
-} from "@/app/api/utils/tokenUtils"
-import { connectDB } from "@/app/api/utils/db"
+  splitTextByTokenLimit,
+} from "@/app/api/utils/tokenUtils";
+import { connectDB } from "@/app/api/utils/db";
+import { cachedAgent, deleteCacheKey } from "@/lib/cache"; //  added cache helpers
 
-const MAX_TOKENS = 2000
+const MAX_TOKENS = 2000;
 
-export async function POST(req: NextRequest) {
-  const { keyword } = await req.json()
+//  Core analyzer generation logic
+async function generateAnalysis(keyword: string) {
+  //  Fetch SERP data
+  const serpRes = await fetch(
+    `https://serpapi.com/search.json?q=${encodeURIComponent(keyword)}&api_key=${process.env.SERP_API_KEY}`
+  );
+  const serpJson = await serpRes.json();
 
-  if (!keyword) {
-    return NextResponse.json({ error: "Missing keyword" }, { status: 400 })
+  if (!serpJson.organic_results || serpJson.organic_results.length === 0) {
+    throw new Error("No SERP data found");
   }
 
+  const organicResults = serpJson.organic_results.slice(0, 5);
+  const prompt = createPrompt(keyword, organicResults);
+
+  if (!isWithinTokenLimit(prompt, MAX_TOKENS)) {
+    const chunks = splitTextByTokenLimit(prompt, MAX_TOKENS);
+    throw new Error(
+      `Prompt exceeded token limit. Reduce SERP results or truncate content.`
+    );
+  }
+
+  //  Call Groq LLM for analysis
+  const aiRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "openai/gpt-oss-20b",
+      messages: [
+        { role: "system", content: "You are an SEO analyst and strategist." },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.3,
+    }),
+  });
+
+  const aiJson = await aiRes.json();
+
+  if (!aiJson.choices?.[0]?.message?.content) {
+    throw new Error("No AI content returned.");
+  }
+
+  const rawOutput = aiJson.choices[0].message.content;
+
+  //  Validate output
+  let parsed;
   try {
-    await connectDB()
+    parsed = JSON.parse(rawOutput || "{}");
+  } catch (err) {
+    console.error(" JSON parse error:", err, "\nOutput:", rawOutput);
+    throw new Error("Failed to parse AI output");
+  }
 
-    // 🔓 Skipping credit and plan checks for now
-    // await checkAndConsumeCredit(email, { allowOnly: ["Starter", "Pro"] })
+  const validation = AnalyzeAgentSchema.safeParse(parsed);
+  if (!validation.success) {
+    console.error(" Schema validation failed:", validation.error.flatten());
+    throw new Error("Output schema validation failed");
+  }
 
-    const serpRes = await fetch(
-      `https://serpapi.com/search.json?q=${encodeURIComponent(keyword)}&api_key=${process.env.SERP_API_KEY}`
-    )
-    const serpJson = await serpRes.json()
+  return validation.data;
+}
 
-    if (!serpJson.organic_results || serpJson.organic_results.length === 0) {
-      return NextResponse.json({ error: "No SERP data found" }, { status: 404 })
+//  API Route
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { keyword, regenerate = false } = body;
+
+    if (!keyword) {
+      return NextResponse.json({ error: "Missing keyword" }, { status: 400 });
     }
 
-    const organicResults = serpJson.organic_results.slice(0, 5)
+    await connectDB();
 
-    const prompt = createPrompt(keyword, organicResults)
+    const cacheKey = `agent:analyze:${keyword.toLowerCase()}`;
 
-    if (!isWithinTokenLimit(prompt, MAX_TOKENS)) {
-      const chunks = splitTextByTokenLimit(prompt, MAX_TOKENS)
-      return NextResponse.json({
-        error: "Prompt too long",
-        chunks,
-        suggestion: "Reduce number of SERP results or truncate content."
-      }, { status: 413 })
+    //  Optional regenerate
+    if (regenerate) {
+      await deleteCacheKey(cacheKey);
+      console.log(`♻️ Cache cleared for analyze agent: ${keyword}`);
     }
 
-    const aiRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-20b",
-        messages: [
-          { role: "system", content: "You are an SEO analyst and strategist." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.3
-      })
-    })
+    //  Use cachedAgent (12-hour TTL)
+    const result = await cachedAgent(
+      cacheKey,
+      () => generateAnalysis(keyword),
+      60 * 60 * 12
+    );
 
-    const aiJson = await aiRes.json()
-
-    if (!aiJson.choices?.[0]?.message?.content) {
-      return NextResponse.json({ error: "No AI content returned." }, { status: 500 })
-    }
-
-    const rawOutput = aiJson.choices[0].message.content
-
-    let parsed
-    try {
-      parsed = JSON.parse(rawOutput || "{}")
-    } catch (err) {
-      console.error("❌ JSON parse error:", err, "\nOutput:", rawOutput)
-      return NextResponse.json({ error: "Failed to parse AI output", raw: rawOutput }, { status: 500 })
-    }
-
-    const validation = AnalyzeAgentSchema.safeParse(parsed)
-
-    if (!validation.success) {
-      return NextResponse.json({
-        error: "Output schema validation failed",
-        issues: validation.error.flatten(),
-        raw: parsed
-      }, { status: 422 })
-    }
-
-    return NextResponse.json({
-      keyword,
-      ...validation.data
-    })
-
+    return NextResponse.json({ keyword, ...result });
   } catch (err: unknown) {
-    console.error("🔍 Analyze Agent Fatal Error:", err)
-    if (err instanceof Error) {
-      return NextResponse.json({ error: err.message }, { status: 500 })
-    }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error(" Analyze Agent Fatal Error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json(
+      { error: message || "Internal server error" },
+      { status: 500 }
+    );
   }
 }
