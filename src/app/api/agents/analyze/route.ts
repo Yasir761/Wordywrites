@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     //  Optional regenerate
     if (regenerate) {
       await deleteCacheKey(cacheKey);
-      console.log(`♻️ Cache cleared for analyze agent: ${keyword}`);
+      console.log(` Cache cleared for analyze agent: ${keyword}`);
     }
 
     //  Use cachedAgent (12-hour TTL)
