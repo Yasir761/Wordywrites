@@ -1,8 +1,367 @@
+// import { clerkClient } from "@clerk/clerk-sdk-node";
+// import { connectDB } from "@/app/api/utils/db";
+// import { BlogModel } from "@/app/models/blog";
+// import { getUserPlan } from "@/app/api/utils/planUtils";
+// import { UserModel } from "@/app/models/user";
+// import { performance } from "perf_hooks";
+
+// const AGENT_ENDPOINTS = {
+//   analyze: "/api/agents/analyze",
+//   crawl: "/api/agents/crawl",
+//   keyword: "/api/agents/keyword",
+//   blueprint: "/api/agents/blueprint",
+//   tone: "/api/agents/tone",
+//   hashtags: "/api/agents/hashtags",
+//   seo: "/api/agents/seo-optimizer",
+//   blog: "/api/agents/blog",
+//   contentpreview: "/api/agents/contentpreview",
+// };
+
+// function getBaseUrl() {
+//   if (typeof window !== "undefined") return "";
+//   return process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+// }
+// const baseUrl = getBaseUrl();
+
+// export async function orchestratorHandler({
+//   userId,
+//   keyword,
+//   crawlUrl,
+// }: {
+//   userId: string;
+//   keyword: string;
+//   crawlUrl?: string;
+// }) {
+//   console.log(" QStash triggered orchestrator for:", keyword);
+//   const startAll = performance.now();
+
+//   //  Connect to DB
+//   await connectDB();
+
+//   // Get user (fallback to system)
+//   let email = "system@wordywrites.ai";
+//   try {
+//     const user = await clerkClient.users.getUser(userId);
+//     email = user?.emailAddresses?.[0]?.emailAddress || email;
+//   } catch (err) {
+//     const message =
+//       err instanceof Error ? err.message : typeof err === "string" ? err : String(err);
+//     console.warn(" Clerk lookup failed:", message);
+//   }
+
+//   //  Ensure user record
+//   await UserModel.findOneAndUpdate(
+//     { email },
+//     { userId, email },
+//     { upsert: true, new: true, setDefaultsOnInsert: true }
+//   );
+
+//   // Plan check (fallback to Pro for dev)
+//   const plan = await getUserPlan(userId).catch(() => ({
+//     name: "Pro",
+//     aiAgents: Object.keys(AGENT_ENDPOINTS),
+//   }));
+
+//   //  Agent caller helper
+//   const callAgent = async (agent: keyof typeof AGENT_ENDPOINTS, body: any) => {
+//     if (!plan.aiAgents.includes(agent))
+//       throw { agent, status: 403, error: `Agent "${agent}" not allowed for ${plan.name}` };
+
+//     const start = performance.now();
+//     const res = await fetch(`${baseUrl}${AGENT_ENDPOINTS[agent]}`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify(body),
+//     });
+//     const json = await res.json();
+//     if (!res.ok) throw { status: res.status, agent, error: json };
+//     console.log(` ${agent} finished in ${(performance.now() - start).toFixed(1)}ms`);
+//     return json;
+//   };
+
+//   //  Parallel Agent Execution (with dependencies)
+//   const [analyze, keywordData] = await Promise.all([
+//     callAgent("analyze", { keyword }),
+//     callAgent("keyword", { keyword }),
+//   ]);
+
+//   const [tone, tagsData] = await Promise.all([
+//     callAgent("tone", { keyword }),
+//     callAgent("hashtags", { keyword }),
+//   ]);
+
+//   // Include outline + analyze in SEO call
+//   const [blueprint, seo] = await Promise.all([
+//     callAgent("blueprint", { keyword, tone: tone.tone, intent: keywordData.intent }),
+//     callAgent("seo", {
+//       keyword,
+//       tone: tone.tone,
+//       voice: tone.voice,
+//       tags: tagsData.tags,
+//       analyze,
+//       outline: keywordData?.outline || [],
+//     }),
+//   ]);
+
+//   //  Use blueprint’s outline or fallback
+//   const finalOutline =
+//     blueprint?.outline || (Array.isArray(keywordData?.outline) ? keywordData.outline : []);
+
+//   //  Run Blog first (so we can use blog content for preview)
+//   const blog = await callAgent("blog", {
+//     keyword,
+//     outline: finalOutline,
+//     tone: tone.tone,
+//     seo,
+//   });
+
+//   //  Now generate Content Preview using blog content
+//   const [preview, crawl] = await Promise.all([
+//     callAgent("contentpreview", {
+//       title: seo.optimized_title || keyword,
+//       content: blog.blog || "", //  pass generated blog content
+//     }),
+//     crawlUrl ? callAgent("crawl", { url: crawlUrl }) : Promise.resolve(null),
+//   ]);
+
+//   //  Save all results
+//   await BlogModel.create({
+//     userId,
+//     keywordAgent: { keyword, intent: keywordData.intent },
+//     toneAgent: tone,
+//     blueprintAgent: blueprint,
+//     seoAgent: seo,
+//     blogAgent: blog,
+//     analyzeAgent: analyze,
+//     crawlAgent: crawl,
+//     ContentPreviewAgent: preview,
+//     status: "draft",
+//     createdAt: new Date(),
+//   });
+
+//   console.log(" Orchestrator completed in", (performance.now() - startAll).toFixed(2), "ms");
+// }
+
+
+// import { clerkClient } from "@clerk/clerk-sdk-node";
+// import { connectDB } from "@/app/api/utils/db";
+// import { BlogModel } from "@/app/models/blog";
+// import { getUserPlan } from "@/app/api/utils/planUtils";
+// import { UserModel } from "@/app/models/user";
+// import { batchGet, batchSet } from "@/lib/cacheBatch";
+// import { performance } from "perf_hooks";
+
+// const AGENT_ENDPOINTS = {
+//   analyze: "/api/agents/analyze",
+//   crawl: "/api/agents/crawl",
+//   keyword: "/api/agents/keyword",
+//   blueprint: "/api/agents/blueprint",
+//   tone: "/api/agents/tone",
+//   hashtags: "/api/agents/hashtags",
+//   seo: "/api/agents/seo-optimizer",
+//   blog: "/api/agents/blog",
+//   contentpreview: "/api/agents/contentpreview",
+// };
+
+// function getBaseUrl() {
+//   if (typeof window !== "undefined") return "";
+//   return process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+// }
+// const baseUrl = getBaseUrl();
+
+// export async function orchestratorHandler({
+//   userId,
+//   keyword,
+//   crawlUrl,
+// }: {
+//   userId: string;
+//   keyword: string;
+//   crawlUrl?: string;
+// }) {
+//   console.log(`🚀 QStash triggered orchestrator for: "${keyword}"`);
+//   const startAll = performance.now();
+
+//   // 🔌 Connect to MongoDB
+//   await connectDB();
+
+//   // 👤 Clerk user lookup
+//   let email = "system@wordywrites.ai";
+//   try {
+//     const user = await clerkClient.users.getUser(userId);
+//     email = user?.emailAddresses?.[0]?.emailAddress || email;
+//   } catch (err) {
+//     console.warn("⚠️ Clerk lookup failed:", err);
+//   }
+
+//   // 🧩 Ensure user exists in DB
+//   await UserModel.findOneAndUpdate(
+//     { email },
+//     { userId, email },
+//     { upsert: true, new: true, setDefaultsOnInsert: true }
+//   );
+
+//   // 💳 Plan check
+//   const plan = await getUserPlan(userId).catch(() => ({
+//     name: "Pro",
+//     aiAgents: Object.keys(AGENT_ENDPOINTS),
+//   }));
+
+//   const keys = {
+//     analyze: `agent:analyze:${keyword}`,
+//     keyword: `agent:keyword:${keyword}`,
+//     tone: `agent:tone:${keyword}`,
+//     hashtags: `agent:hashtags:${keyword}`,
+//     blueprint: `agent:blueprint:${keyword}`,
+//     seo: `agent:seo:${keyword}`,
+//     blog: `agent:blog:${keyword}`,
+//     contentpreview: `agent:contentpreview:${keyword}`,
+//   };
+
+//   // 🧠 Prefetch from Redis
+//   console.time("🧠 REDIS_MGET");
+//   const cached = await batchGet(Object.values(keys));
+//   console.timeEnd("🧠 REDIS_MGET");
+
+//   const cacheStatus: Record<string, string> = {};
+//   const ttl = 60 * 60 * 24; // 24 hours
+
+//   // ⚙️ Helper to call agents
+//   const callAgent = async (agent: keyof typeof AGENT_ENDPOINTS, body: any) => {
+//     if (!plan.aiAgents.includes(agent))
+//       throw { agent, status: 403, error: `Agent "${agent}" not allowed for ${plan.name}` };
+
+//     const start = performance.now();
+//     const res = await fetch(`${baseUrl}${AGENT_ENDPOINTS[agent]}`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify(body),
+//     });
+//     const json = await res.json();
+//     if (!res.ok) throw { status: res.status, agent, error: json };
+
+//     console.log(`⚙️ ${agent} generated in ${(performance.now() - start).toFixed(1)}ms`);
+//     return json;
+//   };
+
+//   // 📦 Helper for cache retrieval or generation
+//   async function getOrGenerate(
+//     idx: number,
+//     agent: keyof typeof AGENT_ENDPOINTS,
+//     body: any
+//   ) {
+//     if (cached[idx]) {
+//       cacheStatus[agent] = "🟢 CACHE HIT";
+//       return cached[idx];
+//     }
+//     cacheStatus[agent] = "🟡 MISS → generating";
+//     return await callAgent(agent, body);
+//   }
+
+//   // 🧩 Orchestrator parallel execution
+//   const [analyze, keywordData] = await Promise.all([
+//     getOrGenerate(0, "analyze", { keyword }),
+//     getOrGenerate(1, "keyword", { keyword }),
+//   ]);
+
+//   const [tone, tagsData] = await Promise.all([
+//     getOrGenerate(2, "tone", { keyword }),
+//     getOrGenerate(3, "hashtags", { keyword }),
+//   ]);
+
+//   const [blueprint, seo] = await Promise.all([
+//     getOrGenerate(4, "blueprint", { keyword, tone: tone.tone, intent: keywordData.intent }),
+//     getOrGenerate(5, "seo", {
+//       keyword,
+//       tone: tone.tone,
+//       voice: tone.voice,
+//       tags: tagsData.tags,
+//       analyze,
+//     }),
+//   ]);
+
+//   const finalOutline =
+//     blueprint?.outline || (Array.isArray(keywordData?.outline) ? keywordData.outline : []);
+
+//   const blog = await getOrGenerate(6, "blog", {
+//     keyword,
+//     outline: finalOutline,
+//     tone: tone.tone,
+//     seo,
+//   });
+
+//   const preview = await getOrGenerate(7, "contentpreview", {
+//     title: seo.optimized_title || keyword,
+//     content: blog.blog || "",
+//   });
+
+//   const crawl = crawlUrl ? await callAgent("crawl", { url: crawlUrl }) : null;
+
+//   // 💾 Batch set new results
+//   const newEntries: Array<[string, any, number]> = [];
+//   const allAgents = Object.keys(keys) as Array<keyof typeof keys>;
+
+//   // map agent names to their generated results (note: keyword agent result is in keywordData, hashtags in tagsData)
+//   const results: Record<keyof typeof keys, any> = {
+//     analyze,
+//     keyword: keywordData,
+//     tone,
+//     hashtags: tagsData,
+//     blueprint,
+//     seo,
+//     blog,
+//     contentpreview: preview,
+//   };
+
+//   allAgents.forEach((agent, i) => {
+//     if (!cached[i]) {
+//       newEntries.push([keys[agent], results[agent], ttl]);
+//     }
+//   });
+
+//   console.time("💾 REDIS_PIPELINE_SET");
+//   await batchSet(newEntries);
+//   console.timeEnd("💾 REDIS_PIPELINE_SET");
+
+//   // 🧱 Save all results to DB
+//   await BlogModel.create({
+//     userId,
+//     keywordAgent: { keyword, intent: keywordData.intent },
+//     toneAgent: tone,
+//     blueprintAgent: blueprint,
+//     seoAgent: seo,
+//     blogAgent: blog,
+//     analyzeAgent: analyze,
+//     crawlAgent: crawl,
+//     ContentPreviewAgent: preview,
+//     status: "draft",
+//     createdAt: new Date(),
+//   });
+
+//   console.log("\n🧩 CACHE STATUS SUMMARY:");
+//   Object.entries(cacheStatus).forEach(([agent, status]) =>
+//     console.log(`  → ${agent.padEnd(15)} : ${status}`)
+//   );
+
+//   console.log(
+//     `\n✅ Orchestrator completed in ${(performance.now() - startAll).toFixed(2)}ms`
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { connectDB } from "@/app/api/utils/db";
 import { BlogModel } from "@/app/models/blog";
 import { getUserPlan } from "@/app/api/utils/planUtils";
 import { UserModel } from "@/app/models/user";
+import { batchGet, batchSet } from "@/lib/cacheBatch";
 import { performance } from "perf_hooks";
 
 const AGENT_ENDPOINTS = {
@@ -28,41 +387,77 @@ export async function orchestratorHandler({
   keyword,
   crawlUrl,
 }: {
-  userId: string;
+  userId?: string;
   keyword: string;
   crawlUrl?: string;
 }) {
-  console.log(" QStash triggered orchestrator for:", keyword);
+  console.log(`🚀 QStash triggered orchestrator for: "${keyword}"`);
   const startAll = performance.now();
 
-  //  Connect to DB
+  // 1️⃣ Connect to DB
   await connectDB();
 
-  // Get user (fallback to system)
+  // 2️⃣ Handle missing user (for local or Postman testing)
+  if (!userId) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("⚠️ No userId provided — using fallback dev_user_1234");
+      userId = "dev_user_1234";
+    } else {
+      console.error("❌ Missing userId in production");
+      throw new Error("Unauthorized: Missing userId");
+    }
+  }
+
+  // 3️⃣ Clerk user lookup (with fallback email)
   let email = "system@wordywrites.ai";
   try {
     const user = await clerkClient.users.getUser(userId);
     email = user?.emailAddresses?.[0]?.emailAddress || email;
+    console.log(`👤 Clerk user found: ${email}`);
   } catch (err) {
     const message =
       err instanceof Error ? err.message : typeof err === "string" ? err : String(err);
-    console.warn(" Clerk lookup failed:", message);
+    console.warn("⚠️ Clerk lookup failed:", message);
+    console.log("🧩 Using fallback email:", email);
   }
 
-  //  Ensure user record
+  // 4️⃣ Ensure user record exists
   await UserModel.findOneAndUpdate(
     { email },
     { userId, email },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
+  console.log("✅ User record ensured in DB");
 
-  // Plan check (fallback to Pro for dev)
+  // 5️⃣ Get plan (fallback to Pro for testing)
   const plan = await getUserPlan(userId).catch(() => ({
     name: "Pro",
     aiAgents: Object.keys(AGENT_ENDPOINTS),
   }));
 
-  //  Agent caller helper
+  console.log(`💳 Active Plan: ${plan.name}`);
+
+  // 6️⃣ Define cache keys
+  const keys = {
+    analyze: `agent:analyze:${keyword}`,
+    keyword: `agent:keyword:${keyword}`,
+    tone: `agent:tone:${keyword}`,
+    hashtags: `agent:hashtags:${keyword}`,
+    blueprint: `agent:blueprint:${keyword}`,
+    seo: `agent:seo:${keyword}`,
+    blog: `agent:blog:${keyword}`,
+    contentpreview: `agent:contentpreview:${keyword}`,
+  };
+
+  // 7️⃣ Prefetch Redis cache
+  console.time("🧠 REDIS_MGET");
+  const cached = await batchGet(Object.values(keys));
+  console.timeEnd("🧠 REDIS_MGET");
+
+  const cacheStatus: Record<string, string> = {};
+  const ttl = 60 * 60 * 24; // 24 hours
+
+  // 8️⃣ Agent call helper
   const callAgent = async (agent: keyof typeof AGENT_ENDPOINTS, body: any) => {
     if (!plan.aiAgents.includes(agent))
       throw { agent, status: 403, error: `Agent "${agent}" not allowed for ${plan.name}` };
@@ -75,56 +470,88 @@ export async function orchestratorHandler({
     });
     const json = await res.json();
     if (!res.ok) throw { status: res.status, agent, error: json };
-    console.log(` ${agent} finished in ${(performance.now() - start).toFixed(1)}ms`);
+
+    console.log(`⚙️ ${agent} generated in ${(performance.now() - start).toFixed(1)}ms`);
     return json;
   };
 
-  //  Parallel Agent Execution (with dependencies)
+  // 9️⃣ Cache retrieval or regeneration
+  async function getOrGenerate(
+    idx: number,
+    agent: keyof typeof AGENT_ENDPOINTS,
+    body: any
+  ) {
+    if (cached[idx]) {
+      cacheStatus[agent] = "🟢 CACHE HIT";
+      return cached[idx];
+    }
+    cacheStatus[agent] = "🟡 MISS → generating";
+    return await callAgent(agent, body);
+  }
+
+  // 🔟 Parallel agent orchestration
   const [analyze, keywordData] = await Promise.all([
-    callAgent("analyze", { keyword }),
-    callAgent("keyword", { keyword }),
+    getOrGenerate(0, "analyze", { keyword }),
+    getOrGenerate(1, "keyword", { keyword }),
   ]);
 
   const [tone, tagsData] = await Promise.all([
-    callAgent("tone", { keyword }),
-    callAgent("hashtags", { keyword }),
+    getOrGenerate(2, "tone", { keyword }),
+    getOrGenerate(3, "hashtags", { keyword }),
   ]);
 
-  // Include outline + analyze in SEO call
   const [blueprint, seo] = await Promise.all([
-    callAgent("blueprint", { keyword, tone: tone.tone, intent: keywordData.intent }),
-    callAgent("seo", {
+    getOrGenerate(4, "blueprint", { keyword, tone: tone.tone, intent: keywordData.intent }),
+    getOrGenerate(5, "seo", {
       keyword,
       tone: tone.tone,
       voice: tone.voice,
       tags: tagsData.tags,
       analyze,
-      outline: keywordData?.outline || [],
     }),
   ]);
 
-  //  Use blueprint’s outline or fallback
   const finalOutline =
     blueprint?.outline || (Array.isArray(keywordData?.outline) ? keywordData.outline : []);
 
-  //  Run Blog first (so we can use blog content for preview)
-  const blog = await callAgent("blog", {
+  const blog = await getOrGenerate(6, "blog", {
     keyword,
     outline: finalOutline,
     tone: tone.tone,
     seo,
   });
 
-  //  Now generate Content Preview using blog content
-  const [preview, crawl] = await Promise.all([
-    callAgent("contentpreview", {
-      title: seo.optimized_title || keyword,
-      content: blog.blog || "", //  pass generated blog content
-    }),
-    crawlUrl ? callAgent("crawl", { url: crawlUrl }) : Promise.resolve(null),
-  ]);
+  const preview = await getOrGenerate(7, "contentpreview", {
+    title: seo.optimized_title || keyword,
+    content: blog.blog || "",
+  });
 
-  //  Save all results
+  const crawl = crawlUrl ? await callAgent("crawl", { url: crawlUrl }) : null;
+
+  // 💾 Cache all new results
+  const newEntries: Array<[string, any, number]> = [];
+  const results: Record<keyof typeof keys, any> = {
+    analyze,
+    keyword: keywordData,
+    tone,
+    hashtags: tagsData,
+    blueprint,
+    seo,
+    blog,
+    contentpreview: preview,
+  };
+
+  Object.keys(keys).forEach((agent, i) => {
+    if (!cached[i]) {
+      newEntries.push([keys[agent as keyof typeof keys], results[agent as keyof typeof keys], ttl]);
+    }
+  });
+
+  console.time("💾 REDIS_PIPELINE_SET");
+  await batchSet(newEntries);
+  console.timeEnd("💾 REDIS_PIPELINE_SET");
+
+  // 🧱 Save results to DB
   await BlogModel.create({
     userId,
     keywordAgent: { keyword, intent: keywordData.intent },
@@ -139,5 +566,13 @@ export async function orchestratorHandler({
     createdAt: new Date(),
   });
 
-  console.log(" Orchestrator completed in", (performance.now() - startAll).toFixed(2), "ms");
+  // 🧩 Cache summary
+  console.log("\n🧩 CACHE STATUS SUMMARY:");
+  Object.entries(cacheStatus).forEach(([agent, status]) =>
+    console.log(`  → ${agent.padEnd(15)} : ${status}`)
+  );
+
+  console.log(
+    `\n✅ Orchestrator completed in ${(performance.now() - startAll).toFixed(2)}ms`
+  );
 }
