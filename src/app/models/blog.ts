@@ -15,10 +15,10 @@ const ContentPreviewAgentSchema = new mongoose.Schema(
 
 
 const BlogSchema = new mongoose.Schema({
-  userId: { type: String, required: false },
+  userId: { type: String, required: false, index:true },
 
   keywordAgent: {
-    keyword: { type: String, required: true },
+    keyword: { type: String, required: true, index:true },
     intent: { type: String, required: true },
   },
 
@@ -72,6 +72,8 @@ const BlogSchema = new mongoose.Schema({
 });
 
 
-delete mongoose.models.Blog;
+
+BlogSchema.index({ userId: 1, createdAt: -1 });
+BlogSchema.index({ "keywordAgent.keyword": 1, createdAt: -1 });
 export const BlogModel =
   mongoose.models.Blog || mongoose.model("Blog", BlogSchema);

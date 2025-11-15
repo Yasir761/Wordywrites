@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema({
-  userId: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
+  userId: { type: String, required: true, unique: true, index:true},
+  email: { type: String, required: true, unique: true, index :true },
   plan: {
     type: String,
     enum: ['Free', 'Pro'],
@@ -14,5 +14,8 @@ const UserSchema = new mongoose.Schema({
    paddleCustomerId: { type: String, unique: true, sparse: true },
   paddleSubscriptionId: { type: String, unique: true, sparse: true }
 }, { timestamps: true });
+
+UserSchema.index({ userId: 1, plan: 1 });
+UserSchema.index({ paddleSubscriptionId: 1 });
 
 export const UserModel = mongoose.models.User || mongoose.model("User", UserSchema);
