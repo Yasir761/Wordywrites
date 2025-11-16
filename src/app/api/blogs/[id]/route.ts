@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ blogs, totalPages });
   } catch (error) {
-    console.error("❌ Error fetching blogs:", error);
+    console.error("Error fetching blogs:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

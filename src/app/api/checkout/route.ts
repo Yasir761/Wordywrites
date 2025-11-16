@@ -37,7 +37,7 @@ export async function POST(req: Request) {
         custom_data:{
           userId: String(userId)
         },
-        // ✅ Redirect URLs (make sure these routes exist in your Next.js app)
+        //  Redirect URLs (make sure these routes exist in your Next.js app)
         success_url: "http://wordywrites.app/dashboard",
         // cancel_url: "http://localhost:3000/cancel",
       }),
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     console.log("Paddle Transaction API response:", transactionData);
 
     if (!transactionRes.ok) {
-      console.error("❌ Paddle Transaction API error:");
+      console.error(" Paddle Transaction API error:");
       console.error("Status:", transactionRes.status);
       console.error("Response:", JSON.stringify(transactionData, null, 2));
       if (transactionData.error?.errors) {
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
 
     const transaction = transactionData.data;
     console.log(
-      "✅ Transaction created:",
+      " Transaction created:",
       transaction.id,
       "Status:",
       transaction.status
@@ -70,14 +70,14 @@ export async function POST(req: Request) {
     const checkoutUrl = transaction.checkout?.url;
 
     if (!checkoutUrl) {
-      console.error("❌ No checkout URL in transaction:", transaction);
+      console.error(" No checkout URL in transaction:", transaction);
       return NextResponse.json(
         { error: "No checkout URL available" },
         { status: 500 }
       );
     }
 
-    console.log("✅ Checkout URL:", checkoutUrl);
+    console.log(" Checkout URL:", checkoutUrl);
 
     return NextResponse.json({
       transactionId: transaction.id,
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
       status: transaction.status,
     });
   } catch (err: any) {
-    console.error("❌ Checkout API error:", err);
+    console.error(" Checkout API error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

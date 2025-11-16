@@ -4,12 +4,12 @@ export async function POST(req: Request) {
   try {
     const { name, email, message, website } = await req.json()
 
-    // 🚨 Honeypot check
+    //  Honeypot check
     if (website) {
       return NextResponse.json({ error: "Spam detected" }, { status: 400 })
     }
 
-    // 🚨 Validate fields
+    //  Validate fields
     if (!name || !email || !message || message.length > 2000) {
       return NextResponse.json({ error: "Invalid submission" }, { status: 400 })
     }

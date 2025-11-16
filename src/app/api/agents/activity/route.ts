@@ -1,9 +1,9 @@
-
-// import { auth } from "@clerk/nextjs/server";
-// import { NextResponse } from "next/server";
-// import { BlogModel } from "@/app/models/blog";
-// import { connectDB } from "@/app/api/utils/db";
-// import { getUserPlan } from "@/app/api/utils/planUtils";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { BlogModel } from "@/app/models/blog";
+import { connectDB } from "@/app/api/utils/db";
+import { getUserPlan } from "@/app/api/utils/planUtils";
+import crypto from "crypto"; // for ETag hashing
 
 const ALL_AGENTS = [
   { key: "keyword", name: "Keyword Agent", description: "The Keyword Agent analyzes your target keyword to determine the searcher’s true intent — whether it's informational, transactional, navigational, or commercial. It uses AI to precisely parse and validate the keyword.", type: "automated" },
@@ -17,37 +17,8 @@ const ALL_AGENTS = [
   { key: "blog", name: "Blog Writing Agent", description: "The Blog Agent generates a high-quality, SEO-optimized blog post using AI. It combines keyword intent, a structured outline, tone guidance, and SEO metadata to produce clean, publish-ready content.", type: "automated" },
 ];
 
-// export async function GET() {
-//   const { userId } = await auth();
-//   if (!userId) {
-//     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//   }
-
-//   await connectDB();
-//   const plan = await getUserPlan(userId);
-
-//   const latestBlog = await BlogModel.findOne({ userId }).sort({ createdAt: -1 }).lean() as { createdAt?: Date } | null;
-
-//   const agents = ALL_AGENTS.map(agent => {
-//     return {
-//       name: agent.name,
-//       description: agent.description,
-//       type: agent.type,
-//       active: plan.aiAgents.includes(agent.key),
-//       lastRun: latestBlog?.createdAt ? new Date(latestBlog.createdAt).toLocaleString() : null
-//     };
-//   });
-
-//   return NextResponse.json({ agents });
-// }
 
 
-
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-import { BlogModel } from "@/app/models/blog";
-import { connectDB } from "@/app/api/utils/db";
-import { getUserPlan } from "@/app/api/utils/planUtils";
 
 export async function GET() {
   const { userId } = await auth();
@@ -76,5 +47,20 @@ console.log("User plan in /api/agents/activity:", plan);
     };
   });
 
-  return NextResponse.json({ agents });
+  //  Generate ETag from JSON string hash
+  const dataString = JSON.stringify(agents);
+  const etag = crypto.createHash("md5").update(dataString).digest("hex");
+
+  const response = NextResponse.json({ agents });
+
+  //  Add CDN caching headers
+  response.headers.set(
+    "Cache-Control",
+    "public, s-maxage=300, stale-while-revalidate=120"
+  );
+  response.headers.set("ETag", etag);
+
+  return response;
+
+ 
 }
