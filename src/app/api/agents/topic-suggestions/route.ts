@@ -37,13 +37,13 @@ async function runTopicFinderAgent(keyword: string) {
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    console.error("❌ JSON parse error:", err, "\nReturned:", raw);
+    console.error(" JSON parse error:", err, "\nReturned:", raw);
     throw new Error("Invalid JSON from model");
   }
 
   const result = TopicSuggestionSchema.safeParse(parsed);
   if (!result.success) {
-    console.error("❌ Schema validation failed:", result.error.flatten());
+    console.error(" Schema validation failed:", result.error.flatten());
     throw new Error("Invalid schema from model");
   }
 

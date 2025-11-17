@@ -1,6 +1,6 @@
+
 "use client";
 
-import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Lock, Unlock, Zap } from "lucide-react";
 import clsx from "clsx";
@@ -11,6 +11,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAgentsActivity } from "@/hooks/useAgentsActivity"; // ← USE YOUR SWR HOOK
+import { ReactElement, JSXElementConstructor, ReactNode, ReactPortal } from "react";
 
 // Label mapping for agent names
 const AGENT_LABELS: Record<string, string> = {
@@ -19,7 +21,7 @@ const AGENT_LABELS: Record<string, string> = {
   seo: "Meta Optimizer",
   tone: "Tone & Voice Styler",
   hashtags: "Hashtag Generator",
-  ContentPreview: "Teaser Creator",
+  contentpreview: "Teaser Creator",
   analyze: "Competitor Analyzer",
   crawl: "Content Scraper",
   blog: "AI Blog Writer",
@@ -28,30 +30,18 @@ const AGENT_LABELS: Record<string, string> = {
 // Helper to truncate description for preview
 function getPreview(text: string, wordLimit = 15) {
   const words = text.split(" ");
-  return words.length <= wordLimit ? text : words.slice(0, wordLimit).join(" ") + "...";
+  return words.length <= wordLimit
+    ? text
+    : words.slice(0, wordLimit).join(" ") + "...";
 }
 
 export default function AIAgentsPanel() {
-  const [agents, setAgents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, error, isLoading } = useAgentsActivity();
 
-  useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        const res = await fetch("/api/agents/activity");
-        const data = await res.json();
-        setAgents(data.agents || []);
-      } catch (error) {
-        console.error("Failed to fetch agents", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  if (isLoading) return <div className="text-sm text-gray-500">Loading smart modules...</div>;
+  if (error) return <div className="text-sm text-red-500">Failed to load agents</div>;
 
-    fetchAgents();
-  }, []);
-
-  if (loading) return <div className="text-sm text-gray-500">Loading smart modules...</div>;
+  const agents = data?.agents || [];
 
   return (
     <TooltipProvider delayDuration={100}>
@@ -61,9 +51,9 @@ export default function AIAgentsPanel() {
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {agents.map((agent, i) => (
+          {agents.map((agent: { key: string | number; active: any; name: any; description: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; }, i: number) => (
             <motion.div
-              key={i}
+              key={agent.key || i}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1, duration: 0.4 }}
@@ -98,22 +88,22 @@ export default function AIAgentsPanel() {
                   </div>
                 </div>
 
-                {/* Description Preview + Tooltip */}
+                {/* Description + Tooltip */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 cursor-help">
-                      {getPreview(agent.description)}
+                      {getPreview(String(agent.description || ""))}
                     </p>
                   </TooltipTrigger>
                   <TooltipContent
                     side="bottom"
-                    className="max-w-xs bg-gray-800 text-white text-sm font-normal rounded-md px-3 py-2 shadow-lg"
+                    className="max-w-xs bg-gray-800 text-white text-sm rounded-md px-3 py-2 shadow-lg"
                   >
-                    {agent.description}
+                    {String(agent.description || "")}
                   </TooltipContent>
                 </Tooltip>
 
-                {/* Footer: Lock or Unlock Icon */}
+                {/* Footer: Lock/Unlock */}
                 <div className="flex justify-end mt-auto pt-2">
                   {agent.active ? (
                     <Unlock className="w-5 h-5 text-green-600" />
@@ -124,9 +114,9 @@ export default function AIAgentsPanel() {
                       </TooltipTrigger>
                       <TooltipContent
                         side="top"
-                        className="bg-gray-800 text-white text-xs font-medium rounded-md px-3 py-1 shadow-lg"
+                        className="bg-gray-800 text-white text-xs px-3 py-1 rounded-md shadow-lg"
                       >
-                        {agent.requiredPlan ? `${agent.requiredPlan} only` : "Upgrade to unlock"}
+                        Upgrade to unlock
                       </TooltipContent>
                     </Tooltip>
                   )}
@@ -139,8 +129,3 @@ export default function AIAgentsPanel() {
     </TooltipProvider>
   );
 }
-
-
-
-
-

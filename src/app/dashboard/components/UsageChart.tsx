@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -22,57 +23,51 @@ import {
 } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUserChart } from "@/hooks/useUserchart"; // <-- import your SWR hook
 
 export default function BlogUsageChart() {
   const [range, setRange] = React.useState("7d");
-  const [loading, setLoading] = React.useState(false);
-  const [data, setData] = React.useState<any[]>([]);
+
+  // --- Use SWR instead of manual fetch ---
+  const { data, error, isLoading } = useUserChart();
+
+  const chartData = data || [];
+
+  // Insight state
   const [insight, setInsight] = React.useState("");
 
-  // Fetch data from API
+  // Generate insights
   React.useEffect(() => {
-    async function fetchChartData() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/user/chart");
-        const result = await res.json();
-        setData(result);
-      } catch (error) {
-        console.error("Failed to fetch chart data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchChartData();
-  }, []);
-
-  // Generate insights based on current data
-  React.useEffect(() => {
-    if (data.length > 1) {
-      const seoChange = data[data.length - 1].avgSEO - data[0].avgSEO;
-      const blogChange = data[data.length - 1].blogs - data[0].blogs;
-
-      if (seoChange > 0 && blogChange > 0) {
-        setInsight("Consistency increasing, SEO improving steadily.");
-      } else if (seoChange > 0) {
-        setInsight("SEO quality improving even with fewer blogs.");
-      } else if (blogChange > 0) {
-        setInsight("More blogs published, but SEO needs attention.");
-      } else {
-        setInsight("Engagement and quality are stable. Try experimenting.");
-      }
-    } else {
+    if (!chartData || chartData.length < 2) {
       setInsight("Not enough data to analyze trends yet.");
+      return;
     }
-  }, [range, data]);
+
+    const seoChange =
+      chartData[chartData.length - 1].avgSEO - chartData[0].avgSEO;
+
+    const blogChange =
+      chartData[chartData.length - 1].blogs - chartData[0].blogs;
+
+    if (seoChange > 0 && blogChange > 0)
+      setInsight("Consistency increasing, SEO improving steadily.");
+    else if (seoChange > 0)
+      setInsight("SEO quality improving even with fewer blogs.");
+    else if (blogChange > 0)
+      setInsight("More blogs published, but SEO needs attention.");
+    else
+      setInsight("Engagement and quality are stable. Try experimenting.");
+  }, [chartData, range]);
 
   // Filter based on range
-  const filteredData = data.slice(
-    range === "30d" ? -30 : range === "7d" ? -7 : undefined
-  );
+  const filteredData = React.useMemo(() => {
+    if (!chartData) return [];
+    if (range === "7d") return chartData.slice(-7);
+    if (range === "30d") return chartData.slice(-30);
+    return chartData;
+  }, [range, chartData]);
 
-  const isEmpty = filteredData.length === 0;
+  const isEmpty = !filteredData || filteredData.length === 0;
 
   return (
     <Card className="w-full mt-10 rounded-2xl border border-white/30 bg-white/70 backdrop-blur-md shadow-md transition-all">
@@ -86,6 +81,7 @@ export default function BlogUsageChart() {
             {range === "7d" ? "7 days" : range === "30d" ? "30 days" : "all time"}
           </CardDescription>
         </div>
+
         <CardAction>
           <ToggleGroup
             type="single"
@@ -108,7 +104,7 @@ export default function BlogUsageChart() {
       </CardHeader>
 
       <CardContent className="pt-2">
-        {loading ? (
+        {isLoading ? (
           <Skeleton className="w-full h-[280px] rounded-xl bg-gray-100/40 animate-pulse" />
         ) : isEmpty ? (
           <div className="flex items-center justify-center h-[280px] text-gray-500 text-sm">
@@ -127,7 +123,9 @@ export default function BlogUsageChart() {
                     <stop offset="100%" stopColor="#6366f1" stopOpacity={0.05} />
                   </linearGradient>
                 </defs>
+
                 <CartesianGrid strokeDasharray="4 4" vertical={false} strokeOpacity={0.08} />
+
                 <XAxis
                   dataKey="date"
                   axisLine={false}
@@ -135,14 +133,16 @@ export default function BlogUsageChart() {
                   tickMargin={8}
                   className="text-sm fill-gray-500"
                 />
+
                 <YAxis hide />
+
                 <Tooltip
                   contentStyle={{
                     borderRadius: 8,
                     border: "1px solid #e5e7eb",
                     background: "#fff",
                     fontSize: 14,
-                    boxShadow: "0 6px 18px rgba(0, 0, 0, 0.08)",
+                    boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
                   }}
                   labelStyle={{ fontWeight: 600, color: "#4b5563" }}
                   formatter={(value: number, name: string) => {
@@ -151,35 +151,25 @@ export default function BlogUsageChart() {
                       : [`${value} blogs`, "Blogs"];
                   }}
                 />
+
                 <Area
                   type="monotone"
                   dataKey="blogs"
                   stroke="#6366f1"
                   strokeWidth={2}
                   fill="url(#colorBlogs)"
-                  dot={{
-                    stroke: "#6366f1",
-                    strokeWidth: 2,
-                    fill: "#fff",
-                    r: 3,
-                  }}
-                  activeDot={{
-                    r: 6,
-                    stroke: "#4f46e5",
-                    strokeWidth: 2,
-                    fill: "#fff",
-                  }}
                 />
+
                 <Line
                   type="monotone"
                   dataKey="avgSEO"
                   stroke="#f59e0b"
                   strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 5, stroke: "#f59e0b", fill: "#fff" }}
                 />
               </AreaChart>
             </ResponsiveContainer>
+
             <p className="text-sm text-gray-600 mt-3">{insight}</p>
           </>
         )}

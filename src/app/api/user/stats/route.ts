@@ -10,13 +10,13 @@ export async function GET() {
 
   await connectDB();
 
-  // --- Define time ranges ---
+  //  Define time ranges
   const now = new Date();
   const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
-  // --- Fetch blogs ---
+  // Fetch blogs 
   const allBlogs = await BlogModel.find({ userId });
   const currentBlogs = await BlogModel.find({
     userId,
@@ -27,7 +27,7 @@ export async function GET() {
     createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
   });
 
-  // --- Base stats ---
+  // Base stats 
   const blogCount = allBlogs.length;
   const totalWords = allBlogs.reduce((acc, blog) => acc + (blog.blogAgent?.wordCount || 0), 0);
   const avgSEO =
@@ -54,7 +54,7 @@ export async function GET() {
         previousBlogs.length
       : 0;
 
-  // --- Trend calculations ---
+  //  Trend calculations 
   const calcTrend = (current: number, previous: number) =>
     previous === 0 ? 100 : Math.round(((current - previous) / previous) * 100);
 
