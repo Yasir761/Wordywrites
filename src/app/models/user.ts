@@ -12,10 +12,10 @@ const UserSchema = new mongoose.Schema({
    blogsGeneratedThisMonth: { type: Number, default: 0 },
   lastBlogReset: { type: Date, default: Date.now },
    paddleCustomerId: { type: String, unique: true, sparse: true },
-  paddleSubscriptionId: { type: String, unique: true, sparse: true }
+  
 }, { timestamps: true });
 
 UserSchema.index({ userId: 1, plan: 1 });
-UserSchema.index({ paddleSubscriptionId: 1 });
+// UserSchema.index({ paddleSubscriptionId: 1 }, { unique: true, sparse: true });
 
 export const UserModel = mongoose.models.User || mongoose.model("User", UserSchema);
