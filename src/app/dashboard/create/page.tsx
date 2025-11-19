@@ -8,6 +8,7 @@ import BlogEditor from "@/components/blog/blogEditor";
 import { useRouter } from "next/navigation";
 import TeaserSection from "@/app/dashboard/components/TeaserSection";
 import { LocalErrorBoundary } from "../components/LocalErrorBoundary";
+import {showToast} from "@/lib/toast";
 
 // FeatureLock wrapper
 const FeatureLock = ({ isLocked, children }: { isLocked: boolean; children: React.ReactNode }) => {
@@ -126,11 +127,21 @@ export default function BlogGenerator() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ keyword, subject, tone }),
       });
-      const data = await res.json();
-      setBlogData(data);
-      setStep("generate");
+const data = await res.json();
+setBlogData(data);
+setStep("generate");
+showToast({
+  type: "success",
+  title: "Your blog is ready!",
+  description: "You can now preview, edit, and publish it.",
+});
     } catch (error) {
       console.error("Error generating blog:", error);
+      showToast({
+        type: "error",
+        title: "Blog generation failed",
+        description: "Please try again later.",
+      });
     } finally {
       setIsLoading(false);
     }

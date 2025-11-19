@@ -246,6 +246,157 @@
 
 
 
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import { motion } from "framer-motion";
+// import { useSearchParams } from "next/navigation";
+// import useSWR from "swr";
+
+// import { LocalErrorBoundary } from "../components/LocalErrorBoundary";
+// import { useUserPlan } from "@/hooks/useUserPlan";
+
+// const fetcher = (url: string) => fetch(url).then(r => r.json());
+
+// function PublishBlogContent() {
+//   const searchParams = useSearchParams();
+
+//   // 1. Use SWR instead of useEffect fetching
+//   const { data: planData, error: planError } = useUserPlan();
+//   const { data: profiles, error: profileError } = useSWR("/api/blog-profile", fetcher);
+
+//   const plan = planData?.plan || "Free";
+
+//   const [selectedProfile, setSelectedProfile] = useState("");
+//   const [siteUrl, setSiteUrl] = useState("");
+//   const [username, setUsername] = useState("");
+//   const [appPassword, setAppPassword] = useState("");
+
+//   const [title, setTitle] = useState("");
+//   const [content, setContent] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const [loadingStep, setLoadingStep] = useState(0);
+//   const [error, setError] = useState("");
+
+//   // Load blog from URL/localStorage
+//   useEffect(() => {
+//     const titleURL = searchParams.get("title");
+//     const contentURL = searchParams.get("content");
+
+//     if (titleURL && contentURL) {
+//       setTitle(decodeURIComponent(titleURL));
+//       setContent(decodeURIComponent(contentURL));
+//       return;
+//     }
+
+//     const saved = localStorage.getItem("blogData");
+//     if (saved) {
+//       const parsed = JSON.parse(saved);
+//       setTitle(parsed?.seo?.optimized_title || "");
+//       setContent(parsed?.blog || "");
+//     }
+//   }, [searchParams]);
+
+//   // When profiles load from SWR, pick first one
+//   useEffect(() => {
+//     if (profiles && profiles.length > 0) {
+//       const p = profiles[0];
+//       setSelectedProfile(p._id);
+//       setSiteUrl(p.siteUrl);
+//       setUsername(p.username);
+//       setAppPassword(p.appPassword);
+//     }
+//   }, [profiles]);
+
+//   function handleProfileChange(id: string) {
+//     setSelectedProfile(id);
+//     const p = profiles.find((x: any) => x._id === id);
+//     if (p) {
+//       setSiteUrl(p.siteUrl);
+//       setUsername(p.username);
+//       setAppPassword(p.appPassword);
+//     }
+//   }
+
+//   // Publish blog
+//   async function handlePublish() {
+//     if (plan !== "Pro") {
+//       alert("Upgrade required");
+//       return;
+//     }
+
+//     setError("");
+//     setLoading(true);
+
+//     try {
+//       const res = await fetch("/api/integrations/wordpress/export", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ siteUrl, username, applicationPassword: appPassword, title, content }),
+//       });
+
+//       const data = await res.json();
+
+//       if (!res.ok) throw new Error(data.error || "Failed publishing");
+
+//       window.open(data.editLink, "_blank");
+//     } catch (err: any) {
+//       setError(err.message);
+//     }
+
+//     setLoading(false);
+//   }
+
+//   // --------------------------------------------
+
+//   if (planError) return <p>Error loading plan</p>;
+//   if (profileError) return <p>Error loading blog profiles</p>;
+//   if (!profiles) return <p>Loading...</p>;
+
+//   return (
+//     <motion.div className="max-w-2xl mx-auto p-6 space-y-8">
+//       <h1 className="text-4xl font-bold text-center">Publish to WordPress</h1>
+
+//       {plan === "Pro" && (
+//         <>
+//           <select
+//             value={selectedProfile}
+//             onChange={(e) => handleProfileChange(e.target.value)}
+//             className="w-full p-3 border rounded"
+//           >
+//             {profiles.map((p: any) => (
+//               <option key={p._id} value={p._id}>{p.profileName}</option>
+//             ))}
+//           </select>
+
+//           <div className="prose mt-3" dangerouslySetInnerHTML={{ __html: content }} />
+//         </>
+//       )}
+
+//       <button
+//         onClick={handlePublish}
+//         disabled={loading || plan !== "Pro"}
+//         className="w-full py-3 bg-blue-600 text-white rounded"
+//       >
+//         {loading ? "Publishing..." : plan !== "Pro" ? "Upgrade to Pro" : "Publish Now"}
+//       </button>
+
+//       {error && <p className="text-red-500 text-center">{error}</p>}
+//     </motion.div>
+//   );
+// }
+
+// export default function PublishBlogPage() {
+//   return (
+//     <LocalErrorBoundary>
+//       <PublishBlogContent />
+//     </LocalErrorBoundary>
+//   );
+// }
+
+
+
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -255,13 +406,13 @@ import useSWR from "swr";
 
 import { LocalErrorBoundary } from "../components/LocalErrorBoundary";
 import { useUserPlan } from "@/hooks/useUserPlan";
+import { showToast } from "@/lib/toast"; // <-- ADD THIS
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 function PublishBlogContent() {
   const searchParams = useSearchParams();
 
-  // 1. Use SWR instead of useEffect fetching
   const { data: planData, error: planError } = useUserPlan();
   const { data: profiles, error: profileError } = useSWR("/api/blog-profile", fetcher);
 
@@ -275,7 +426,6 @@ function PublishBlogContent() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState("");
 
   // Load blog from URL/localStorage
@@ -321,7 +471,11 @@ function PublishBlogContent() {
   // Publish blog
   async function handlePublish() {
     if (plan !== "Pro") {
-      alert("Upgrade required");
+      showToast({
+        type: "warning",
+        title: "Upgrade required",
+        description: "Publishing to WordPress is available only for Pro users.",
+      });
       return;
     }
 
@@ -339,18 +493,55 @@ function PublishBlogContent() {
 
       if (!res.ok) throw new Error(data.error || "Failed publishing");
 
+      if (!data.editLink) {
+        showToast({
+          type: "error",
+          title: "Publishing completed, but no edit link returned",
+          description: "Please open WordPress manually.",
+        });
+        return;
+      }
+
+      showToast({
+        type: "success",
+        title: "Published successfully!",
+        description: "Your blog has been pushed to WordPress.",
+      });
+
       window.open(data.editLink, "_blank");
+
     } catch (err: any) {
       setError(err.message);
+
+      showToast({
+        type: "error",
+        title: "Publishing failed",
+        description: err.message || "Something went wrong.",
+      });
     }
 
     setLoading(false);
   }
 
-  // --------------------------------------------
+  // Error handling for plan or profile fetch
+  if (planError) {
+    showToast({
+      type: "error",
+      title: "Plan fetch error",
+      description: "Unable to load your subscription plan.",
+    });
+    return <p>Error loading plan</p>;
+  }
 
-  if (planError) return <p>Error loading plan</p>;
-  if (profileError) return <p>Error loading blog profiles</p>;
+  if (profileError) {
+    showToast({
+      type: "error",
+      title: "Profile fetch error",
+      description: "Unable to load WordPress profiles.",
+    });
+    return <p>Error loading blog profiles</p>;
+  }
+
   if (!profiles) return <p>Loading...</p>;
 
   return (
@@ -369,7 +560,10 @@ function PublishBlogContent() {
             ))}
           </select>
 
-          <div className="prose mt-3" dangerouslySetInnerHTML={{ __html: content }} />
+          <div
+            className="prose mt-3"
+            dangerouslySetInnerHTML={{ __html: content }}
+          />
         </>
       )}
 
