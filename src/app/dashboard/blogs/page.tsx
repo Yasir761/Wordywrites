@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useBlogs } from "@/hooks/useBlogs";
+import { LocalErrorBoundary } from "../components/LocalErrorBoundary";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -63,6 +64,7 @@ export default function BlogsPage() {
 
   return (
     <div className="space-y-8">
+      <LocalErrorBoundary>
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
@@ -188,6 +190,7 @@ export default function BlogsPage() {
           </Tabs>
         </DialogContent>
       </Dialog>
+    </LocalErrorBoundary>
     </div>
   );
 }

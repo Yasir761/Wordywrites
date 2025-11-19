@@ -23,12 +23,12 @@ import {
 } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUserChart } from "@/hooks/useUserchart"; // <-- import your SWR hook
+import { useUserChart } from "@/hooks/useUserchart"; 
 
 export default function BlogUsageChart() {
   const [range, setRange] = React.useState("7d");
 
-  // --- Use SWR instead of manual fetch ---
+
   const { data, error, isLoading } = useUserChart();
 
   const chartData = data || [];
