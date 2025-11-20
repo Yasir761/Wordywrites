@@ -1,102 +1,245 @@
 
 
+// import { NextRequest, NextResponse } from "next/server";
+// import { createPrompt } from "./prompt";
+// import { KeywordIntentSchema } from "./schema";
+// import { z } from "zod";
+// import { redis } from "@/lib/redis";
+// import { cachedAgent, deleteCacheKey } from "@/lib/cache"; //  using your shared helper
+
+
+
+
+
+// type KeywordIntent = z.infer<typeof KeywordIntentSchema>;
+
+// /**
+//  * Core logic of the Keyword Agent
+//  */
+// async function generateKeywordIntent(keyword: string): Promise<KeywordIntent> {
+//   const prompt = createPrompt(keyword);
+
+//   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+//     method: "POST",
+//     headers: {
+//       Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify({
+//       model: "openai/gpt-oss-20b",
+//       messages: [
+//         { role: "system", content: "You are a precise SEO keyword intent analyzer." },
+//         { role: "user", content: prompt },
+//       ],
+//       temperature: 0.2,
+//     }),
+//   });
+
+//   const json = await response.json();
+//   let raw = json.choices?.[0]?.message?.content?.trim();
+//   if (!raw) throw new Error("No content returned from model");
+
+//   raw = raw.replace(/```json|```/g, "").trim();
+
+//   let parsed;
+//   try {
+//     parsed = JSON.parse(raw);
+//   } catch (err) {
+//     console.error(" JSON parse error:", err, "\nReturned:", raw);
+//     throw new Error("Invalid JSON from model");
+//   }
+
+//   const result = KeywordIntentSchema.safeParse(parsed);
+//   if (!result.success) {
+//     console.error(" Schema validation failed:", result.error.flatten());
+//     throw new Error("Invalid schema from model");
+//   }
+
+//   return result.data;
+// }
+
+// /**
+//  *  API Route (POST)
+//  */
+// export async function POST(req: NextRequest) {
+  
+//   try {
+//     const { keyword, regenerate = false } = await req.json();
+
+//     if (!keyword) {
+//       return NextResponse.json({ error: "Missing keyword" }, { status: 400 });
+//     }
+
+//     const cacheKey = `agent:keyword:${keyword.toLowerCase()}`;
+
+//     // Handle regenerate (force new LLM call)
+//     if (regenerate) {
+//       await deleteCacheKey(cacheKey);
+//       console.log(` Cache cleared for ${keyword}`);
+//     }
+
+//     //  Use cachedAgent helper (12-hour TTL)
+//     console.time("TOTAL_REQUEST");
+// console.time("REDIS_GET");
+//     const data = await cachedAgent<KeywordIntent>(
+//       cacheKey,
+//       () => generateKeywordIntent(keyword),
+//       60 * 60 * 12
+//     );
+// console.timeEnd("REDIS_GET");
+// console.timeEnd("TOTAL_REQUEST");
+//     //  Add flag so frontend can tell if cached or not
+//     const cachedFlag = await (async () => {
+//       const allKeys = await redis.smembers("wordywrites:cached_keys");
+//       return allKeys.includes(cacheKey);
+//     })();
+
+//     return NextResponse.json({ ...data, cached: cachedFlag });
+//   } catch (err: unknown) {
+//     const message = err instanceof Error ? err.message : String(err);
+//     return NextResponse.json({ error: message || "Agent error" }, { status: 500 });
+//   }
+// }
+
+
+
+
+
 import { NextRequest, NextResponse } from "next/server";
 import { createPrompt } from "./prompt";
 import { KeywordIntentSchema } from "./schema";
 import { z } from "zod";
 import { redis } from "@/lib/redis";
-import { cachedAgent, deleteCacheKey } from "@/lib/cache"; //  using your shared helper
-
-
-
-
+import { cachedAgent, deleteCacheKey } from "@/lib/cache";
+import * as Sentry from "@sentry/nextjs";
 
 type KeywordIntent = z.infer<typeof KeywordIntentSchema>;
 
 /**
- * Core logic of the Keyword Agent
+ * Core logic of the Keyword Agent (LLM call wrapped w/ Sentry)
  */
 async function generateKeywordIntent(keyword: string): Promise<KeywordIntent> {
-  const prompt = createPrompt(keyword);
+  return await Sentry.startSpan(
+    { name: "Keyword Agent LLM", op: "agent.keyword.llm" },
+    async () => {
+      Sentry.addBreadcrumb({
+        category: "keyword-agent",
+        message: "Preparing keyword prompt",
+        level: "info",
+        data: { keyword },
+      });
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "openai/gpt-oss-20b",
-      messages: [
-        { role: "system", content: "You are a precise SEO keyword intent analyzer." },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.2,
-    }),
-  });
+      const prompt = createPrompt(keyword);
 
-  const json = await response.json();
-  let raw = json.choices?.[0]?.message?.content?.trim();
-  if (!raw) throw new Error("No content returned from model");
+      let response;
+      try {
+        response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "openai/gpt-oss-20b",
+            messages: [
+              { role: "system", content: "You are a precise SEO keyword intent analyzer." },
+              { role: "user", content: prompt },
+            ],
+            temperature: 0.2,
+          }),
+        });
+      } catch (networkError) {
+        Sentry.captureException(networkError, {
+          extra: { keyword, stage: "groq-fetch" },
+        });
+        throw new Error("Groq API network failure");
+      }
 
-  raw = raw.replace(/```json|```/g, "").trim();
+      const json = await response.json();
+      let raw = json.choices?.[0]?.message?.content?.trim();
 
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (err) {
-    console.error(" JSON parse error:", err, "\nReturned:", raw);
-    throw new Error("Invalid JSON from model");
-  }
+      if (!raw) {
+        Sentry.withScope((scope) => {
+          scope.setLevel("warning");
+          scope.setExtra("keyword", keyword);
+          Sentry.captureMessage("Keyword agent returned empty output");
+        });
+        throw new Error("No content returned from model");
+      }
 
-  const result = KeywordIntentSchema.safeParse(parsed);
-  if (!result.success) {
-    console.error(" Schema validation failed:", result.error.flatten());
-    throw new Error("Invalid schema from model");
-  }
+      raw = raw.replace(/```json|```/g, "").trim();
 
-  return result.data;
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch (err) {
+        Sentry.captureException(err, {
+          extra: { rawOutput: raw, keyword },
+        });
+        throw new Error("Invalid JSON from LLM");
+      }
+
+      const result = KeywordIntentSchema.safeParse(parsed);
+      if (!result.success) {
+        Sentry.captureException(result.error, {
+          extra: { parsed, keyword },
+        });
+        throw new Error("Keyword intent schema validation failed");
+      }
+
+      return result.data;
+    }
+  );
 }
 
 /**
- *  API Route (POST)
+ * API Route (POST)
  */
 export async function POST(req: NextRequest) {
-  
-  try {
-    const { keyword, regenerate = false } = await req.json();
+  return await Sentry.startSpan(
+    { name: "Keyword Agent API", op: "api.post" },
+    async () => {
+      try {
+        const { keyword, regenerate = false, userId } = await req.json();
 
-    if (!keyword) {
-      return NextResponse.json({ error: "Missing keyword" }, { status: 400 });
+        if (userId) Sentry.setUser({ id: userId });
+        Sentry.setTag("agent", "keyword");
+
+        if (!keyword) {
+          return NextResponse.json({ error: "Missing keyword" }, { status: 400 });
+        }
+
+        const cacheKey = `agent:keyword:${keyword.toLowerCase()}`;
+
+        if (regenerate) {
+          Sentry.addBreadcrumb({
+            category: "cache",
+            message: "Regenerate triggered — clearing cache",
+            level: "info",
+            data: { cacheKey },
+          });
+          await deleteCacheKey(cacheKey);
+        }
+
+        const data = await cachedAgent<KeywordIntent>(
+          cacheKey,
+          () => generateKeywordIntent(keyword),
+          60 * 60 * 12 // 12-hour TTL
+        );
+
+        // Check if returned from cache
+        const cachedFlag = await (async () => {
+          const allKeys = await redis.smembers("wordywrites:cached_keys");
+          return allKeys.includes(cacheKey);
+        })();
+
+        return NextResponse.json({ ...data, cached: cachedFlag });
+      } catch (err: unknown) {
+        Sentry.captureException(err);
+
+        const message = err instanceof Error ? err.message : String(err);
+        return NextResponse.json({ error: message || "Agent error" }, { status: 500 });
+      }
     }
-
-    const cacheKey = `agent:keyword:${keyword.toLowerCase()}`;
-
-    // Handle regenerate (force new LLM call)
-    if (regenerate) {
-      await deleteCacheKey(cacheKey);
-      console.log(` Cache cleared for ${keyword}`);
-    }
-
-    //  Use cachedAgent helper (12-hour TTL)
-    console.time("TOTAL_REQUEST");
-console.time("REDIS_GET");
-    const data = await cachedAgent<KeywordIntent>(
-      cacheKey,
-      () => generateKeywordIntent(keyword),
-      60 * 60 * 12
-    );
-console.timeEnd("REDIS_GET");
-console.timeEnd("TOTAL_REQUEST");
-    //  Add flag so frontend can tell if cached or not
-    const cachedFlag = await (async () => {
-      const allKeys = await redis.smembers("wordywrites:cached_keys");
-      return allKeys.includes(cacheKey);
-    })();
-
-    return NextResponse.json({ ...data, cached: cachedFlag });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: message || "Agent error" }, { status: 500 });
-  }
+  );
 }
