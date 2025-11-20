@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { motion, animate, useMotionValue, useTransform } from "framer-motion";
 import PlanCard from "./PlanCard";
-import { useUserStats } from "@/hooks/useUserstats"; // adjust path if needed
+import { useUserStats } from "@/hooks/useUserstats"; 
 
 // Animated number (same as yours)
 function AnimatedNumber({ value }: { value: number }) {
@@ -201,3 +201,4 @@ export default function OverviewCards() {
     </div>
   );
 }
+

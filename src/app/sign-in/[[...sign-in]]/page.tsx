@@ -20,7 +20,7 @@ export default function SignInPage() {
         path="/sign-in"
         routing="path"
         signUpUrl="/sign-up"
-        afterSignInUrl="/dashboard" // 👈 force redirect after sign-in
+        afterSignInUrl="/dashboard" //  force redirect after sign-in
       />
     </div>
   );

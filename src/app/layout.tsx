@@ -6,6 +6,7 @@ import ClientOnly from "@/components/clientOnly"
 import { Analytics } from "@vercel/analytics/next"
 import SWRProvider from "@/app/providers/SWRProvider";
 import Script from "next/script"
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css"
 
 const inter = Inter({
@@ -56,7 +57,9 @@ export default function RootLayout({
         </head>
         <body className="font-sans bg-gradient-to-br from-[#f4f8ff] via-white to-[#fdf2f8] text-gray-800 min-h-screen antialiased">
           <SWRProvider >
-          <ClientOnly>{children}</ClientOnly>
+          <ClientOnly>{children}
+            <Toaster position="top-right" />
+          </ClientOnly>
           </SWRProvider>
           {/*  Vercel Analytics */}
           <Analytics />
