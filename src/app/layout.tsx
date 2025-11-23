@@ -6,21 +6,29 @@ import ClientOnly from "@/components/clientOnly"
 import { Analytics } from "@vercel/analytics/next"
 import SWRProvider from "@/app/providers/SWRProvider";
 import Script from "next/script"
+import { Space_Grotesk, IBM_Plex_Serif, Literata } from 'next/font/google';
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css"
 
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-inter",
-})
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-space-grotesk',
+  display: 'swap',
+});
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["600", "700"],
-  variable: "--font-poppins",
-})
+const ibmPlexSerif = IBM_Plex_Serif({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-ibm-plex-serif',
+  display: 'swap',
+});
+
+const literata = Literata({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-literata',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: "Wordywrites — Smarter Blog Creation with AI",
@@ -35,7 +43,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
+      <html lang="en" className={`${spaceGrotesk.variable} ${ibmPlexSerif.variable} ${literata.variable}`}>
         <head>
         
           {/* Google Analytics Script */}
