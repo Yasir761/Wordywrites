@@ -3,7 +3,6 @@
 import * as React from "react"
 import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group"
 import { type VariantProps } from "class-variance-authority"
-
 import { cn } from "@/lib/utils"
 import { toggleVariants } from "@/components/ui/toggle"
 
@@ -26,7 +25,8 @@ function ToggleGroup({
       data-variant={variant}
       data-size={size}
       className={cn(
-        "group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs",
+        "flex w-fit items-center overflow-hidden rounded-xl bg-white/10 backdrop-blur-md",
+        "border border-white/10 shadow-sm transition-all",
         className
       )}
       {...props}
@@ -58,7 +58,13 @@ function ToggleGroupItem({
           variant: context.variant || variant,
           size: context.size || size,
         }),
-        "min-w-0 flex-1 shrink-0 rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l",
+        "px-4 py-2 text-sm font-medium whitespace-nowrap transition-all",
+        "rounded-none shadow-none flex items-center justify-center",
+        "data-[state=on]:bg-gradient-to-r from-purple-600 to-cyan-500",
+        "data-[state=on]:text-white data-[state=on]:shadow-lg data-[state=on]:scale-[1.03]",
+        "hover:bg-white/10 hover:text-white",
+        "focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-0",
+        "first:rounded-l-xl last:rounded-r-xl",
         className
       )}
       {...props}

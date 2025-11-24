@@ -127,8 +127,6 @@
 // }
 
 
-
-
 "use client"
 
 import { useClerk } from "@clerk/nextjs"
@@ -180,85 +178,109 @@ export function NavUser({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-white/40 data-[state=open]:text-foreground transition-all duration-300 hover:bg-white/30 backdrop-blur-md rounded-lg"
+              className="
+                data-[state=open]:bg-sidebar-accent
+                data-[state=open]:text-sidebar-accent-foreground
+                transition-all duration-300
+                hover:bg-sidebar-accent hover:text-sidebar-accent-foreground
+                rounded-lg
+              "
             >
-              <Avatar className="h-8 w-8 rounded-md ring-2 ring-purple-500/30 group-hover:ring-purple-500 transition-all duration-300">
+              <Avatar className="h-8 w-8 rounded-md ring-2 ring-sidebar-border">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-md">
                   {user.name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
+
               <div className="grid flex-1 text-left text-sm leading-tight ml-2">
-                <span className="truncate font-semibold bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
+                <span className="truncate font-medium text-sidebar-foreground">
                   {user.name}
                 </span>
                 <span className="text-muted-foreground truncate text-xs">
                   {user.email}
                 </span>
               </div>
-              <IconDotsVertical className="ml-auto size-4 text-gray-400 group-hover:text-purple-500 transition" />
+
+              <IconDotsVertical className="ml-auto size-4 text-muted-foreground" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
-            className="min-w-[220px] rounded-xl border border-white/10 shadow-xl backdrop-blur-md bg-white/70 animate-in fade-in zoom-in-95"
+            className="
+              min-w-[220px] rounded-xl
+              border border-sidebar-border
+              shadow-xl backdrop-blur-md
+              bg-sidebar
+              text-sidebar-foreground
+              animate-in fade-in zoom-in-95
+            "
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={6}
           >
-            {/* User Info */}
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-3 px-3 py-2">
-                <Avatar className="h-9 w-9 rounded-md ring ring-purple-500/20">
+                <Avatar className="h-9 w-9 rounded-md ring-2 ring-sidebar-border">
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback className="rounded-md">
                     {user.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium leading-none text-gray-800">
+                  <span className="text-sm font-medium leading-none">
                     {user.name}
                   </span>
-                  <span className="text-xs text-gray-500 leading-tight truncate max-w-[150px]">
+                  <span className="text-xs text-muted-foreground truncate max-w-[150px]">
                     {user.email}
                   </span>
                 </div>
               </div>
             </DropdownMenuLabel>
 
-            <DropdownMenuSeparator className="bg-gray-200" />
+            <DropdownMenuSeparator className="bg-sidebar-border" />
 
-            {/* My Blog Profiles */}
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
                 <a
                   href="/dashboard/blog-profile"
-                  className="flex items-center gap-3 w-full px-2 py-2 rounded-lg hover:bg-purple-100/70 transition"
+                  className="
+                    flex items-center gap-3 w-full px-2 py-2 rounded-lg
+                    hover:bg-sidebar-accent hover:text-sidebar-accent-foreground
+                    transition-colors
+                  "
                 >
-                  <IconBook className="size-4 text-purple-700" />
-                  <span className="font-medium text-purple-700">My Blog Profiles</span>
+                  <IconBook className="size-4" />
+                  <span className="font-medium">My Blog Profiles</span>
                 </a>
               </DropdownMenuItem>
             </DropdownMenuGroup>
 
-            {/* Contact Link */}
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
                 <a
                   href="/contact"
-                  className="flex items-center gap-3 w-full px-2 py-2 rounded-lg hover:bg-purple-100/70 transition"
+                  className="
+                    flex items-center gap-3 w-full px-2 py-2 rounded-lg
+                    hover:bg-sidebar-accent hover:text-sidebar-accent-foreground
+                    transition-colors
+                  "
                 >
-                  <IconMessageCircle className="size-4 text-blue-700" />
-                  <span className="font-medium text-blue-700">Contact</span>
+                  <IconMessageCircle className="size-4" />
+                  <span className="font-medium">Contact</span>
                 </a>
               </DropdownMenuItem>
             </DropdownMenuGroup>
 
-            <DropdownMenuSeparator className="bg-gray-200" />
+            <DropdownMenuSeparator className="bg-sidebar-border" />
 
-            {/* Logout Button */}
             <SignOutButton>
-              <DropdownMenuItem className="text-red-600 hover:bg-red-50 transition font-medium">
+              <DropdownMenuItem
+                className="
+                  text-destructive hover:bg-destructive/10
+                  transition font-medium
+                "
+              >
                 <IconLogout className="size-4 mr-2" />
                 Log out
               </DropdownMenuItem>

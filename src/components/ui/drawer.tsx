@@ -1,23 +1,23 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Drawer as DrawerPrimitive } from "vaul"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { Drawer as DrawerPrimitive } from "vaul";
+import { cn } from "@/lib/utils";
 
 function Drawer(props: React.ComponentProps<typeof DrawerPrimitive.Root>) {
-  return <DrawerPrimitive.Root data-slot="drawer" {...props} />
+  return <DrawerPrimitive.Root data-slot="drawer" {...props} />;
 }
 
 function DrawerTrigger(props: React.ComponentProps<typeof DrawerPrimitive.Trigger>) {
-  return <DrawerPrimitive.Trigger data-slot="drawer-trigger" {...props} />
+  return <DrawerPrimitive.Trigger data-slot="drawer-trigger" {...props} />;
 }
 
 function DrawerPortal(props: React.ComponentProps<typeof DrawerPrimitive.Portal>) {
-  return <DrawerPrimitive.Portal data-slot="drawer-portal" {...props} />
+  return <DrawerPrimitive.Portal data-slot="drawer-portal" {...props} />;
 }
 
 function DrawerClose(props: React.ComponentProps<typeof DrawerPrimitive.Close>) {
-  return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />
+  return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />;
 }
 
 function DrawerOverlay({
@@ -28,13 +28,18 @@ function DrawerOverlay({
     <DrawerPrimitive.Overlay
       data-slot="drawer-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-all",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        `
+        fixed inset-0 z-50
+        bg-black/60
+        backdrop-blur-[2px]
+        transition-all duration-200
+        data-[state=open]:fade-in data-[state=closed]:fade-out
+      `,
         className
       )}
       {...props}
     />
-  )
+  );
 }
 
 function DrawerContent({
@@ -48,46 +53,54 @@ function DrawerContent({
       <DrawerPrimitive.Content
         data-slot="drawer-content"
         className={cn(
-          "fixed z-50 flex flex-col bg-background shadow-lg transition-all duration-300",
-          "group/drawer-content",
-          // Direction-based styling
-          "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:rounded-b-xl data-[vaul-drawer-direction=top]:border-b",
-          "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:rounded-t-xl data-[vaul-drawer-direction=bottom]:border-t",
-          "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:rounded-l-xl data-[vaul-drawer-direction=right]:w-3/4 sm:max-w-sm data-[vaul-drawer-direction=right]:border-l",
-          "data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:rounded-r-xl data-[vaul-drawer-direction=left]:w-3/4 sm:max-w-sm data-[vaul-drawer-direction=left]:border-r",
+          `
+          fixed z-50 flex flex-col
+          bg-card border border-border
+          rounded-xl
+          shadow-xl
+          transition-all duration-200 ease-out
+          animate-in slide-in-from-bottom
+          data-[vaul-drawer-direction=right]:animate-in data-[vaul-drawer-direction=right]:slide-in-from-right
+          data-[vaul-drawer-direction=left]:animate-in data-[vaul-drawer-direction=left]:slide-in-from-left
+
+          // positioning
+          data-[vaul-drawer-direction=bottom]:bottom-0 inset-x-0 max-h-[85vh]
+          data-[vaul-drawer-direction=bottom]:rounded-t-xl
+
+          data-[vaul-drawer-direction=right]:right-0 inset-y-0 w-[420px] max-w-[85vw]
+          data-[vaul-drawer-direction=left]:left-0 inset-y-0 w-[420px] max-w-[85vw]
+        `,
           className
         )}
         {...props}
       >
-        {/* Handle for bottom drawer */}
-        <div className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
+        {/* Handle Drag Strip for bottom drawer */}
+        <div className="hidden group-data-[vaul-drawer-direction=bottom]:block mx-auto mt-3 h-1.5 w-[90px] rounded-full bg-muted" />
+
         {children}
       </DrawerPrimitive.Content>
     </DrawerPortal>
-  )
+  );
 }
 
 function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="drawer-header"
-      className={cn(
-        "flex flex-col gap-1.5 px-4 py-2 text-center md:text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-center",
-        className
-      )}
+      className={cn("px-5 pt-5 pb-2 flex flex-col gap-1", className)}
       {...props}
     />
-  )
+  );
 }
 
 function DrawerFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="drawer-footer"
-      className={cn("mt-auto flex flex-col gap-3 p-4", className)}
+      className={cn("mt-auto flex flex-col gap-3 px-5 py-4", className)}
       {...props}
     />
-  )
+  );
 }
 
 function DrawerTitle({
@@ -97,10 +110,10 @@ function DrawerTitle({
   return (
     <DrawerPrimitive.Title
       data-slot="drawer-title"
-      className={cn("text-lg font-semibold text-foreground", className)}
+      className={cn("font-heading text-lg font-semibold text-foreground tracking-tight", className)}
       {...props}
     />
-  )
+  );
 }
 
 function DrawerDescription({
@@ -110,10 +123,10 @@ function DrawerDescription({
   return (
     <DrawerPrimitive.Description
       data-slot="drawer-description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-sm text-muted-foreground font-editor leading-relaxed", className)}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -127,4 +140,4 @@ export {
   DrawerFooter,
   DrawerTitle,
   DrawerDescription,
-}
+};
