@@ -72,18 +72,17 @@ function DropdownMenuItem({
       data-slot="dropdown-menu-item"
       className={cn(
         `
-        flex items-center gap-2
-        rounded-md px-3 py-2 select-none outline-none cursor-pointer
-        transition-colors
-        text-gray-800 dark:text-gray-200
-        hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-cyan-600/20
-        focus:bg-gradient-to-r focus:from-purple-600/30 focus:to-cyan-600/30
-        focus:text-foreground
-        data-[disabled]:opacity-50 data-[disabled]:pointer-events-none
-        data-[variant=destructive]:text-red-600
-        data-[variant=destructive]:focus:bg-red-600/10
-        [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
-        `,
+flex items-center gap-2
+rounded-md px-3 py-2 select-none outline-none cursor-pointer
+transition-colors
+text-foreground
+hover:bg-sidebar-accent hover:text-sidebar-accent-foreground
+focus:bg-sidebar-accent focus:text-sidebar-accent-foreground
+data-[disabled]:opacity-50 data-[disabled]:pointer-events-none
+data-[variant=destructive]:text-red-600
+data-[variant=destructive]:focus:bg-red-600/10
+[&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0
+`,
         inset && "pl-10",
         className
       )}
