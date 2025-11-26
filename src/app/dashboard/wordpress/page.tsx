@@ -397,6 +397,206 @@
 
 
 
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import { motion } from "framer-motion";
+// import { useSearchParams } from "next/navigation";
+// import useSWR from "swr";
+
+// import { LocalErrorBoundary } from "../components/LocalErrorBoundary";
+// import { useUserPlan } from "@/hooks/useUserPlan";
+// import { showToast } from "@/lib/toast"; // <-- ADD THIS
+
+// const fetcher = (url: string) => fetch(url).then(r => r.json());
+
+// function PublishBlogContent() {
+//   const searchParams = useSearchParams();
+
+//   const { data: planData, error: planError } = useUserPlan();
+//   const { data: profiles, error: profileError } = useSWR("/api/blog-profile", fetcher);
+
+//   const plan = planData?.plan || "Free";
+
+//   const [selectedProfile, setSelectedProfile] = useState("");
+//   const [siteUrl, setSiteUrl] = useState("");
+//   const [username, setUsername] = useState("");
+//   const [appPassword, setAppPassword] = useState("");
+
+//   const [title, setTitle] = useState("");
+//   const [content, setContent] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState("");
+
+//   // Load blog from URL/localStorage
+//   useEffect(() => {
+//     const titleURL = searchParams.get("title");
+//     const contentURL = searchParams.get("content");
+
+//     if (titleURL && contentURL) {
+//       setTitle(decodeURIComponent(titleURL));
+//       setContent(decodeURIComponent(contentURL));
+//       return;
+//     }
+
+//     const saved = localStorage.getItem("blogData");
+//     if (saved) {
+//       const parsed = JSON.parse(saved);
+//       setTitle(parsed?.seo?.optimized_title || "");
+//       setContent(parsed?.blog || "");
+//     }
+//   }, [searchParams]);
+
+//   // When profiles load from SWR, pick first one
+//   useEffect(() => {
+//     if (profiles && profiles.length > 0) {
+//       const p = profiles[0];
+//       setSelectedProfile(p._id);
+//       setSiteUrl(p.siteUrl);
+//       setUsername(p.username);
+//       setAppPassword(p.appPassword);
+//     }
+//   }, [profiles]);
+
+//   function handleProfileChange(id: string) {
+//     setSelectedProfile(id);
+//     const p = profiles.find((x: any) => x._id === id);
+//     if (p) {
+//       setSiteUrl(p.siteUrl);
+//       setUsername(p.username);
+//       setAppPassword(p.appPassword);
+//     }
+//   }
+
+//   // Publish blog
+//   async function handlePublish() {
+//     if (plan !== "Pro") {
+//       showToast({
+//         type: "warning",
+//         title: "Upgrade required",
+//         description: "Publishing to WordPress is available only for Pro users.",
+//       });
+//       return;
+//     }
+
+//     setError("");
+//     setLoading(true);
+
+//     try {
+//       const res = await fetch("/api/integrations/wordpress/export", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ siteUrl, username, applicationPassword: appPassword, title, content }),
+//       });
+
+//       const data = await res.json();
+
+//       if (!res.ok) throw new Error(data.error || "Failed publishing");
+
+//       if (!data.editLink) {
+//         showToast({
+//           type: "error",
+//           title: "Publishing completed, but no edit link returned",
+//           description: "Please open WordPress manually.",
+//         });
+//         return;
+//       }
+
+//       showToast({
+//         type: "success",
+//         title: "Published successfully!",
+//         description: "Your blog has been pushed to WordPress.",
+//       });
+
+//       window.open(data.editLink, "_blank");
+
+//     } catch (err: any) {
+//       setError(err.message);
+
+//       showToast({
+//         type: "error",
+//         title: "Publishing failed",
+//         description: err.message || "Something went wrong.",
+//       });
+//     }
+
+//     setLoading(false);
+//   }
+
+//   // Error handling for plan or profile fetch
+//   if (planError) {
+//     showToast({
+//       type: "error",
+//       title: "Plan fetch error",
+//       description: "Unable to load your subscription plan.",
+//     });
+//     return <p>Error loading plan</p>;
+//   }
+
+//   if (profileError) {
+//     showToast({
+//       type: "error",
+//       title: "Profile fetch error",
+//       description: "Unable to load WordPress profiles.",
+//     });
+//     return <p>Error loading blog profiles</p>;
+//   }
+
+//   if (!profiles) return <p>Loading...</p>;
+
+//   return (
+//     <motion.div className="max-w-2xl mx-auto p-6 space-y-8">
+//       <h1 className="text-4xl font-bold text-center">Publish to WordPress</h1>
+
+//       {plan === "Pro" && (
+//         <>
+//           <select
+//             value={selectedProfile}
+//             onChange={(e) => handleProfileChange(e.target.value)}
+//             className="w-full p-3 border rounded"
+//           >
+//             {profiles.map((p: any) => (
+//               <option key={p._id} value={p._id}>{p.profileName}</option>
+//             ))}
+//           </select>
+
+//           <div
+//             className="prose mt-3"
+//             dangerouslySetInnerHTML={{ __html: content }}
+//           />
+//         </>
+//       )}
+
+//       <button
+//         onClick={handlePublish}
+//         disabled={loading || plan !== "Pro"}
+//         className="w-full py-3 bg-blue-600 text-white rounded"
+//       >
+//         {loading ? "Publishing..." : plan !== "Pro" ? "Upgrade to Pro" : "Publish Now"}
+//       </button>
+
+//       {error && <p className="text-red-500 text-center">{error}</p>}
+//     </motion.div>
+//   );
+// }
+
+// export default function PublishBlogPage() {
+//   return (
+//     <LocalErrorBoundary>
+//       <PublishBlogContent />
+//     </LocalErrorBoundary>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -406,13 +606,12 @@ import useSWR from "swr";
 
 import { LocalErrorBoundary } from "../components/LocalErrorBoundary";
 import { useUserPlan } from "@/hooks/useUserPlan";
-import { showToast } from "@/lib/toast"; // <-- ADD THIS
+import { showToast } from "@/lib/toast";
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 function PublishBlogContent() {
   const searchParams = useSearchParams();
-
   const { data: planData, error: planError } = useUserPlan();
   const { data: profiles, error: profileError } = useSWR("/api/blog-profile", fetcher);
 
@@ -428,7 +627,7 @@ function PublishBlogContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Load blog from URL/localStorage
+  // Blog from URL or LS
   useEffect(() => {
     const titleURL = searchParams.get("title");
     const contentURL = searchParams.get("content");
@@ -447,7 +646,7 @@ function PublishBlogContent() {
     }
   }, [searchParams]);
 
-  // When profiles load from SWR, pick first one
+  // Preselect first profile
   useEffect(() => {
     if (profiles && profiles.length > 0) {
       const p = profiles[0];
@@ -458,7 +657,7 @@ function PublishBlogContent() {
     }
   }, [profiles]);
 
-  function handleProfileChange(id: string) {
+  const handleProfileChange = (id: string) => {
     setSelectedProfile(id);
     const p = profiles.find((x: any) => x._id === id);
     if (p) {
@@ -466,9 +665,8 @@ function PublishBlogContent() {
       setUsername(p.username);
       setAppPassword(p.appPassword);
     }
-  }
+  };
 
-  // Publish blog
   async function handlePublish() {
     if (plan !== "Pro") {
       showToast({
@@ -490,17 +688,7 @@ function PublishBlogContent() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || "Failed publishing");
-
-      if (!data.editLink) {
-        showToast({
-          type: "error",
-          title: "Publishing completed, but no edit link returned",
-          description: "Please open WordPress manually.",
-        });
-        return;
-      }
 
       showToast({
         type: "success",
@@ -508,74 +696,96 @@ function PublishBlogContent() {
         description: "Your blog has been pushed to WordPress.",
       });
 
-      window.open(data.editLink, "_blank");
-
+      if (data.editLink) window.open(data.editLink, "_blank");
     } catch (err: any) {
       setError(err.message);
-
       showToast({
         type: "error",
         title: "Publishing failed",
-        description: err.message || "Something went wrong.",
+        description: err.message,
       });
     }
 
     setLoading(false);
   }
 
-  // Error handling for plan or profile fetch
-  if (planError) {
-    showToast({
-      type: "error",
-      title: "Plan fetch error",
-      description: "Unable to load your subscription plan.",
-    });
-    return <p>Error loading plan</p>;
-  }
-
-  if (profileError) {
-    showToast({
-      type: "error",
-      title: "Profile fetch error",
-      description: "Unable to load WordPress profiles.",
-    });
-    return <p>Error loading blog profiles</p>;
-  }
-
+  if (planError) return <p>Error loading plan</p>;
+  if (profileError) return <p>Error loading blog profiles</p>;
   if (!profiles) return <p>Loading...</p>;
 
   return (
-    <motion.div className="max-w-2xl mx-auto p-6 space-y-8">
-      <h1 className="text-4xl font-bold text-center">Publish to WordPress</h1>
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="max-w-3xl mx-auto p-6 space-y-8"
+    >
+      {/* Title */}
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Publish to WordPress
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Choose a site → review → publish instantly
+        </p>
+      </div>
 
+      {/* Select profile */}
       {plan === "Pro" && (
-        <>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="space-y-2"
+        >
+          <label className="text-sm font-medium text-muted-foreground">
+            Select WordPress Profile
+          </label>
           <select
             value={selectedProfile}
             onChange={(e) => handleProfileChange(e.target.value)}
-            className="w-full p-3 border rounded"
+            className="
+              w-full rounded-lg px-3 py-2 border border-border 
+              bg-card text-foreground transition
+              focus:ring-2 focus:ring-ai-accent/40 focus:border-ai-accent/50
+            "
           >
             {profiles.map((p: any) => (
-              <option key={p._id} value={p._id}>{p.profileName}</option>
+              <option key={p._id} value={p._id}>
+                {p.profileName}
+              </option>
             ))}
           </select>
-
-          <div
-            className="prose mt-3"
-            dangerouslySetInnerHTML={{ __html: content }}
-          />
-        </>
+        </motion.div>
       )}
 
-      <button
+      {/* Blog preview */}
+      <div
+        className="
+          border border-border/60 rounded-xl bg-card/60 backdrop-blur 
+          p-5 max-h-[500px] overflow-y-auto prose prose-gray dark:prose-invert
+        "
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+
+      {/* Publish button */}
+      <motion.button
+        whileTap={{ scale: 0.96 }}
         onClick={handlePublish}
         disabled={loading || plan !== "Pro"}
-        className="w-full py-3 bg-blue-600 text-white rounded"
+        className="
+          w-full py-3 rounded-lg font-medium text-base
+          bg-ai-accent text-white
+          disabled:opacity-60 disabled:cursor-not-allowed
+          transition shadow-[0_0_10px_-4px_var(--ai-accent)]
+          hover:bg-ai-accent/90 hover:shadow-[0_0_14px_-2px_var(--ai-accent)]
+        "
       >
-        {loading ? "Publishing..." : plan !== "Pro" ? "Upgrade to Pro" : "Publish Now"}
-      </button>
+        {loading ? "Publishing…" : plan !== "Pro" ? "Upgrade to Pro" : "Publish Now"}
+      </motion.button>
 
-      {error && <p className="text-red-500 text-center">{error}</p>}
+      {error && (
+        <p className="text-center text-red-500 text-sm">{error}</p>
+      )}
     </motion.div>
   );
 }
