@@ -303,11 +303,12 @@ showToast({
             {/* Blog Content */}
             <div className="relative bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
               <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wider mb-6">Blog Content</h3>
-              {isClient && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <BlogEditor content={blogData.blog ?? ""} onSave={(updated) => console.log("Updated Blog:", updated)} />
-                </div>
-              )}
+              {isClient ? (
+  <BlogEditor content={blogData.blog ?? ""} onSave={(updated) => console.log("Updated Blog:", updated)} />
+) : (
+  <div className="text-sm text-muted-foreground">Loading editor…</div>
+)}
+
             </div>
 
             {/* Teasers */}
@@ -350,3 +351,8 @@ showToast({
     </LocalErrorBoundary>
   );
 }
+
+
+
+
+
