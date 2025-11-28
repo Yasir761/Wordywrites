@@ -33,7 +33,7 @@ export default function GlobalError({
           <div className="flex flex-col sm:flex-row gap-3 w-full justify-center pt-2">
             <Button
               className="flex items-center gap-2"
-              variant="default"
+              variant="primary"
               onClick={reset}
             >
               <RefreshCw className="h-4 w-4" />
