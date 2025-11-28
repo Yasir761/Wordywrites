@@ -4,7 +4,9 @@
 // import { useState } from "react";
 // import dynamic from "next/dynamic";
 // import { diffWords } from "diff";
+// import { motion } from "framer-motion";
 // import { LocalErrorBoundary } from "../components/LocalErrorBoundary";
+// import { showToast } from "@/lib/toast";
 
 // const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -14,34 +16,41 @@
 //   const [manualTitle, setManualTitle] = useState("");
 //   const [manualContent, setManualContent] = useState("");
 //   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState<string | null>(null);
 //   const [result, setResult] = useState<any>(null);
-//   const [editedContent, setEditedContent] = useState<string>("");
+//   const [editedContent, setEditedContent] = useState("");
 //   const [showDiff, setShowDiff] = useState(false);
-//   const [plan, setPlan] = useState<"Free" | "Pro">("Pro"); // ⚠️ for now set Pro directly
+//   const [plan] = useState<"Free" | "Pro">("Pro");
 
 //   const handleEnhance = async () => {
 //     if (plan !== "Pro") {
-//       alert("Enhancing blogs is available only for Pro users. Please upgrade.");
+//       showToast({
+//         type: "warning",
+//         title: "Upgrade required",
+//         description: "Enhancing content is available only for Pro users.",
+//       });
 //       return;
 //     }
 
-//     setError(null);
-//     setResult(null);
-//     setEditedContent("");
-
 //     if (mode === "rss" && !rssUrl.trim()) {
-//       setError("Please enter a valid RSS feed URL");
+//       showToast({
+//         type: "error",
+//         title: "Enter RSS URL",
+//         description: "Provide a valid feed URL.",
+//       });
 //       return;
 //     }
 
 //     if (mode === "manual" && manualContent.trim().length < 100) {
-//       setError("Please provide at least 100 characters of blog content");
+//       showToast({
+//         type: "error",
+//         title: "Content too short",
+//         description: "Paste at least 100 characters.",
+//       });
 //       return;
 //     }
 
+//     setLoading(true);
 //     try {
-//       setLoading(true);
 //       const res = await fetch("/api/agents/crawl", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
@@ -51,28 +60,32 @@
 //       });
 
 //       const data = await res.json();
-//       if (!res.ok) {
-//         setError(data.error || "Failed to process blog");
-//         return;
-//       }
+//       if (!res.ok) throw new Error(data.error || "Enhancing failed");
 
 //       setResult(data);
 //       setEditedContent(data.enhanced.content);
+
+//       showToast({
+//         type: "success",
+//         title: "Enhanced successfully",
+//         description: "Your blog has been polished by AI.",
+//       });
 //     } catch {
-//       setError("Something went wrong. Try again.");
-//     } finally {
-//       setLoading(false);
+//       showToast({
+//         type: "error",
+//         title: "Unexpected error",
+//         description: "Try again.",
+//       });
 //     }
+//     setLoading(false);
 //   };
 
-//   // Simple inline diff renderer
-//   const renderDiff = (original: string, enhanced: string) => {
-//     const diff = diffWords(original, enhanced);
-//     return diff.map((part, index) => {
+//   const renderDiff = (original: string, enhanced: string) =>
+//     diffWords(original, enhanced).map((part, index) => {
 //       const style = part.added
-//         ? "bg-green-200 text-green-800 px-1 rounded"
+//         ? "bg-green-500/25 text-green-700 px-1 rounded"
 //         : part.removed
-//         ? "bg-red-200 text-red-800 px-1 rounded line-through"
+//         ? "bg-red-500/25 text-red-700 line-through px-1 rounded"
 //         : "";
 //       return (
 //         <span key={index} className={style}>
@@ -80,154 +93,165 @@
 //         </span>
 //       );
 //     });
-//   };
 
 //   return (
 //     <LocalErrorBoundary>
-//     <div className="min-h-screen bg-gradient-to-br from-[#f4f8ff] via-white to-[#fdf2f8] p-8">
-//       <div className="max-w-6xl mx-auto bg-white shadow-2xl rounded-3xl p-8 border border-gray-100">
-//         <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-//           Crawl & Enhance
-//         </h1>
-//         <p className="text-gray-500 mt-2">
-//           Import a blog via RSS or paste your content manually to enhance it with AI.
-//         </p>
-
-//         {/* Mode Switch */}
-//         <div className="mt-6 flex gap-4">
-//           <button
-//             onClick={() => setMode("rss")}
-//             className={`px-4 py-2 rounded-lg ${
-//               mode === "rss" ? "bg-blue-600 text-white" : "bg-gray-200"
-//             }`}
-//           >
-//             Use RSS Feed
-//           </button>
-//           <button
-//             onClick={() => setMode("manual")}
-//             className={`px-4 py-2 rounded-lg ${
-//               mode === "manual" ? "bg-blue-600 text-white" : "bg-gray-200"
-//             }`}
-//           >
-//             Paste Blog Content
-//           </button>
+      
+//       <motion.div
+//         initial={{ opacity: 0, y: 8 }}
+//         animate={{ opacity: 1, y: 0 }}
+//         transition={{ duration: 0.35 }}
+//         className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-12"
+//       >
+//         {/* Header */}
+//         <div>
+//           <h1 className="text-3xl font-semibold tracking-tight">
+//             Crawl & Enhance
+//           </h1>
+//           <p className="text-muted-foreground text-sm mt-1">
+//             Import from RSS or paste manually — AI rewrites, improves SEO & readability.
+//           </p>
+//           <p className="text-muted-foreground text-sm mt-2 leading-relaxed max-w-2xl">
+//     WordyWrites refines your blogs like a professional editor —
+//     improving grammar, clarity, sentence structure, flow and storytelling
+//     while preserving your original tone and intent.
+//   </p>
 //         </div>
+        
 
-//         {/* Input Fields */}
-//         {mode === "rss" ? (
-//           <div className="mt-6 flex gap-3">
+//         {/* Step container */}
+//         <div className="rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-6 space-y-6 shadow-[0_0_25px_-10px_rgba(0,0,0,0.2)]">
+//           {/* Mode Switch */}
+//           <div className="flex gap-2">
+//             {["rss", "manual"].map((m) => (
+//               <button
+//                 key={m}
+//                 onClick={() => setMode(m as any)}
+//                 className={`
+//                 px-4 py-2 text-sm rounded-lg font-medium transition-all
+//                 ${mode === m
+//                   ? "bg-ai-accent text-white shadow-[0_0_10px_-3px_var(--ai-accent)]"
+//                   : "bg-secondary/60 text-muted-foreground hover:bg-secondary/80"}
+//               `}
+//               >
+//                 {m === "rss" ? "RSS Feed" : "Paste Content"}
+//               </button>
+//             ))}
+//           </div>
+
+//           {/* Inputs */}
+//           {mode === "rss" ? (
 //             <input
-//               type="url"
 //               placeholder="https://example.com/feed"
 //               value={rssUrl}
 //               onChange={(e) => setRssUrl(e.target.value)}
-//               className="flex-1 border rounded-xl px-4 py-3"
+//               className="w-full rounded-xl px-4 py-3 border bg-card text-sm"
 //             />
-//           </div>
-//         ) : (
-//           <div className="mt-6 space-y-3">
-//             <input
-//               type="text"
-//               placeholder="Blog Title (optional)"
-//               value={manualTitle}
-//               onChange={(e) => setManualTitle(e.target.value)}
-//               className="w-full border rounded-xl px-4 py-3"
-//             />
-//             <textarea
-//               placeholder="Paste your blog content..."
-//               value={manualContent}
-//               onChange={(e) => setManualContent(e.target.value)}
-//               className="w-full border rounded-xl px-4 py-3 min-h-[150px]"
-//             />
-//           </div>
-//         )}
+//           ) : (
+//             <div className="space-y-3">
+//               <input
+//                 placeholder="Blog Title (optional)"
+//                 value={manualTitle}
+//                 onChange={(e) => setManualTitle(e.target.value)}
+//                 className="w-full rounded-xl px-4 py-3 border bg-card text-sm"
+//               />
+//               <textarea
+//                 placeholder="Paste your blog content…"
+//                 value={manualContent}
+//                 onChange={(e) => setManualContent(e.target.value)}
+//                 className="w-full rounded-xl px-4 py-3 min-h-[150px] border bg-card text-sm"
+//               />
+//             </div>
+//           )}
 
-//         {/* Enhance Button */}
-//         <button
-//           onClick={handleEnhance}
-//           disabled={loading || plan !== "Pro"}
-//           className="mt-4 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-//         >
-//           {loading
-//             ? "Processing..."
-//             : plan !== "Pro"
-//             ? "Upgrade to Pro to Enhance"
-//             : "Enhance Blog"}
-//         </button>
+//           {/* CTA */}
+//           <motion.button
+//             whileTap={{ scale: 0.97 }}
+//             onClick={handleEnhance}
+//             disabled={loading || plan !== "Pro"}
+//             className="
+//               w-full py-3 rounded-xl font-medium bg-ai-accent text-white
+//               disabled:opacity-60 disabled:cursor-not-allowed text-base
+//               shadow-[0_0_10px_-4px_var(--ai-accent)]
+//               hover:bg-ai-accent/90 hover:shadow-[0_0_14px_-2px_var(--ai-accent)]
+//             "
+//           >
+//             {loading
+//               ? "Enhancing…"
+//               : plan !== "Pro"
+//               ? "Upgrade to Pro to Enhance"
+//               : "Enhance Blog"}
+//           </motion.button>
+//         </div>
 
-//         {error && <p className="text-red-500 mt-4">{error}</p>}
-
-//         {/* --- RESULTS SECTION --- */}
+//         {/* Results */}
 //         {result && (
-//           <div className="mt-10 grid md:grid-cols-2 gap-8">
-//             {/* Original Blog */}
-//             <section className="p-6 rounded-2xl bg-gray-50 border shadow-sm">
-//               <h2 className="text-2xl font-bold text-gray-800">Original Blog</h2>
-//               <h3 className="text-lg font-semibold mt-2">{result.original.title}</h3>
-//               <p className="text-gray-500 mb-4">{result.original.meta_description}</p>
+//           <div className="grid md:grid-cols-2 gap-8">
+//             {/* Original */}
+//             <div className="p-5 border rounded-2xl bg-card/70 backdrop-blur space-y-2">
+//               <h2 className="text-lg font-medium">Original Blog</h2>
 //               <MonacoEditor
-//                 height="400px"
+//                 height="420px"
 //                 language="markdown"
 //                 value={result.original.content}
 //                 options={{
 //                   readOnly: true,
-//                   minimap: { enabled: false },
 //                   fontSize: 14,
-//                   lineNumbers: "on",
-//                   scrollBeyondLastLine: false,
+//                   minimap: { enabled: false },
 //                 }}
 //               />
-//             </section>
+//             </div>
 
-//             {/* Enhanced Blog */}
-//             <section className="p-6 rounded-2xl bg-green-50 border shadow-sm">
-//               <h2 className="text-2xl font-bold text-green-700">Enhanced Blog</h2>
-//               <h3 className="text-lg font-semibold mt-2">{result.enhanced.title}</h3>
-//               <p className="text-gray-600 mb-4">{result.enhanced.meta_description}</p>
+//             {/* Enhanced */}
+//             <div className="p-5 border rounded-2xl bg-card/70 backdrop-blur space-y-2">
+//               <h2 className="text-lg font-medium text-ai-accent">
+//                 Enhanced Blog
+//               </h2>
 //               <MonacoEditor
-//                 height="400px"
+//                 height="420px"
 //                 language="markdown"
 //                 value={editedContent}
-//                 onChange={(val) => setEditedContent(val || "")}
+//                 onChange={(v) => setEditedContent(v || "")}
 //                 options={{
-//                   minimap: { enabled: false },
 //                   fontSize: 14,
-//                   lineNumbers: "on",
-//                   scrollBeyondLastLine: false,
+//                   minimap: { enabled: false },
 //                 }}
 //               />
+
 //               <button
 //                 onClick={() => setShowDiff(true)}
-//                 className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+//                 className="mt-3 px-4 py-2 rounded-lg text-sm bg-secondary hover:bg-secondary/80 transition"
 //               >
-//                 See What Changed
+//                 View Changes
 //               </button>
-//             </section>
+//             </div>
 //           </div>
 //         )}
 
-//         {/* --- DIFF MODAL --- */}
+//         {/* Diff modal */}
 //         {showDiff && result && (
-//           <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-//             <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-y-auto p-6 relative">
+//           <div className="fixed inset-0 grid place-items-center bg-black/50 z-50">
+//             <div className="bg-card rounded-2xl border shadow-xl max-w-4xl w-full max-h-[85vh] p-6 overflow-y-auto relative">
 //               <button
 //                 onClick={() => setShowDiff(false)}
-//                 className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-xl"
+//                 className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
 //               >
 //                 ✕
 //               </button>
-//               <h2 className="text-2xl font-semibold text-blue-700">Content Changes</h2>
-//               <div className="mt-6 bg-gray-900 text-white rounded-xl p-4 font-mono overflow-auto max-h-[65vh] whitespace-pre-wrap">
+//               <h2 className="text-xl font-semibold mb-4">
+//                 AI Change Breakdown
+//               </h2>
+//               <div className="bg-black text-white rounded-xl p-4 font-mono overflow-auto max-h-[70vh] whitespace-pre-wrap text-sm">
 //                 {renderDiff(result.original.content, editedContent)}
 //               </div>
 //             </div>
 //           </div>
 //         )}
-//       </div>
-//     </div>
+//       </motion.div>
 //     </LocalErrorBoundary>
 //   );
 // }
+
 
 
 
@@ -236,8 +260,10 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { diffWords } from "diff";
+import { motion } from "framer-motion";
 import { LocalErrorBoundary } from "../components/LocalErrorBoundary";
-import { showToast } from "@/lib/toast"; // 🚀 ADD THIS
+import { showToast } from "@/lib/toast";
+import { Sparkles, Rss, FileText } from "lucide-react";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -247,31 +273,26 @@ export default function CrawlEnhancePage() {
   const [manualTitle, setManualTitle] = useState("");
   const [manualContent, setManualContent] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
-  const [editedContent, setEditedContent] = useState<string>("");
+  const [editedContent, setEditedContent] = useState("");
   const [showDiff, setShowDiff] = useState(false);
-  const [plan, setPlan] = useState<"Free" | "Pro">("Pro"); // temporarily setting Pro
+  const [plan] = useState<"Free" | "Pro">("Pro");
 
   const handleEnhance = async () => {
     if (plan !== "Pro") {
       showToast({
         type: "warning",
         title: "Upgrade required",
-        description: "Enhancing content is only available for Pro users.",
+        description: "Enhancing content is available only for Pro users.",
       });
       return;
     }
 
-    setError(null);
-    setResult(null);
-    setEditedContent("");
-
     if (mode === "rss" && !rssUrl.trim()) {
       showToast({
         type: "error",
-        title: "Invalid RSS URL",
-        description: "Please enter a valid RSS feed URL.",
+        title: "Enter RSS URL",
+        description: "Provide a valid feed URL.",
       });
       return;
     }
@@ -280,14 +301,13 @@ export default function CrawlEnhancePage() {
       showToast({
         type: "error",
         title: "Content too short",
-        description: "Please provide at least 100 characters of content.",
+        description: "Paste at least 100 characters.",
       });
       return;
     }
 
+    setLoading(true);
     try {
-      setLoading(true);
-
       const res = await fetch("/api/agents/crawl", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -297,44 +317,32 @@ export default function CrawlEnhancePage() {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        showToast({
-          type: "error",
-          title: "Enhancement failed",
-          description: data.error || "Unable to enhance the content.",
-        });
-        return;
-      }
+      if (!res.ok) throw new Error(data.error || "Enhancing failed");
 
       setResult(data);
       setEditedContent(data.enhanced.content);
 
       showToast({
         type: "success",
-        title: "Content enhanced!",
-        description: "Your blog has been successfully improved by AI.",
+        title: "Enhanced successfully",
+        description: "Your blog has been polished by AI.",
       });
-
-    } catch (err) {
+    } catch {
       showToast({
         type: "error",
-        title: "Unexpected Error",
-        description: "Something went wrong. Please try again.",
+        title: "Unexpected error",
+        description: "Try again.",
       });
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
-  // Simple inline diff renderer
-  const renderDiff = (original: string, enhanced: string) => {
-    const diff = diffWords(original, enhanced);
-    return diff.map((part, index) => {
+  const renderDiff = (original: string, enhanced: string) =>
+    diffWords(original, enhanced).map((part, index) => {
       const style = part.added
-        ? "bg-green-200 text-green-800 px-1 rounded"
+        ? "bg-green-500/25 text-green-700 px-1 rounded"
         : part.removed
-        ? "bg-red-200 text-red-800 px-1 rounded line-through"
+        ? "bg-red-500/25 text-red-700 line-through px-1 rounded"
         : "";
       return (
         <span key={index} className={style}>
@@ -342,151 +350,174 @@ export default function CrawlEnhancePage() {
         </span>
       );
     });
-  };
 
   return (
     <LocalErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-[#f4f8ff] via-white to-[#fdf2f8] p-8">
-        <div className="max-w-6xl mx-auto bg-white shadow-2xl rounded-3xl p-8 border border-gray-100">
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="max-w-6xl mx-auto px-4 xl:px-6 py-10 space-y-12"
+      >
+        {/* Header */}
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight flex items-center gap-2">
+            
             Crawl & Enhance
           </h1>
-          <p className="text-gray-500 mt-2">
-            Import a blog via RSS or paste your content manually to enhance it with AI.
+          <p className="text-muted-foreground text-sm">
+            Import via RSS or paste manually — then WordyWrites enhances readability, structure & SEO without losing your tone.
           </p>
+        </div>
 
+        {/* Glassmorphism Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="
+            rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl 
+            p-6 space-y-6 shadow-[0_4px_30px_-12px_rgba(0,0,0,0.4)]
+            hover:shadow-[0_4px_40px_-8px_var(--ai-accent)] transition-all
+          "
+        >
           {/* Mode Switch */}
-          <div className="mt-6 flex gap-4">
-            <button
-              onClick={() => setMode("rss")}
-              className={`px-4 py-2 rounded-lg ${
-                mode === "rss" ? "bg-blue-600 text-white" : "bg-gray-200"
-              }`}
-            >
-              Use RSS Feed
-            </button>
-            <button
-              onClick={() => setMode("manual")}
-              className={`px-4 py-2 rounded-lg ${
-                mode === "manual" ? "bg-blue-600 text-white" : "bg-gray-200"
-              }`}
-            >
-              Paste Blog Content
-            </button>
+          <div className="flex gap-2">
+            {["rss", "manual"].map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m as any)}
+                className={`
+                  px-4 py-2 text-sm rounded-lg font-medium transition-all flex items-center gap-2
+                  ${mode === m
+                    ? "bg-ai-accent text-white shadow-[0_0_10px_-3px_var(--ai-accent)]"
+                    : "bg-secondary/60 text-muted-foreground hover:bg-secondary/80"}
+                `}
+              >
+                {m === "rss" ? <Rss className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                {m === "rss" ? "RSS Feed" : "Paste Content"}
+              </button>
+            ))}
           </div>
 
-          {/* Input Fields */}
+          {/* Inputs */}
           {mode === "rss" ? (
-            <div className="mt-6 flex gap-3">
-              <input
-                type="url"
-                placeholder="https://example.com/feed"
-                value={rssUrl}
-                onChange={(e) => setRssUrl(e.target.value)}
-                className="flex-1 border rounded-xl px-4 py-3"
-              />
-            </div>
+            <input
+              placeholder="https://example.com/feed"
+              value={rssUrl}
+              onChange={(e) => setRssUrl(e.target.value)}
+              className="w-full rounded-xl px-4 py-3 border bg-card text-sm"
+            />
           ) : (
-            <div className="mt-6 space-y-3">
+            <div className="space-y-3">
               <input
-                type="text"
                 placeholder="Blog Title (optional)"
                 value={manualTitle}
                 onChange={(e) => setManualTitle(e.target.value)}
-                className="w-full border rounded-xl px-4 py-3"
+                className="w-full rounded-xl px-4 py-3 border bg-card text-sm"
               />
               <textarea
-                placeholder="Paste your blog content..."
+                placeholder="Paste your blog content…"
                 value={manualContent}
                 onChange={(e) => setManualContent(e.target.value)}
-                className="w-full border rounded-xl px-4 py-3 min-h-[150px]"
+                className="w-full rounded-xl px-4 py-3 min-h-[150px] border bg-card text-sm"
               />
             </div>
           )}
 
-          {/* Enhance Button */}
-          <button
+          {/* CTA */}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
             onClick={handleEnhance}
             disabled={loading || plan !== "Pro"}
-            className="mt-4 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            className="
+              w-full py-3 rounded-xl font-medium bg-ai-accent text-white text-base
+              disabled:opacity-60 disabled:cursor-not-allowed
+              shadow-[0_0_10px_-4px_var(--ai-accent)]
+              hover:bg-ai-accent/90 hover:shadow-[0_0_14px_-2px_var(--ai-accent)]
+            "
           >
             {loading
-              ? "Processing..."
+              ? "Enhancing…"
               : plan !== "Pro"
               ? "Upgrade to Pro to Enhance"
               : "Enhance Blog"}
-          </button>
+          </motion.button>
+        </motion.div>
 
-          {error && <p className="text-red-500 mt-4">{error}</p>}
-
-          {/* --- RESULTS SECTION --- */}
-          {result && (
-            <div className="mt-10 grid md:grid-cols-2 gap-8">
-              {/* Original Blog */}
-              <section className="p-6 rounded-2xl bg-gray-50 border shadow-sm">
-                <h2 className="text-2xl font-bold text-gray-800">Original Blog</h2>
-                <h3 className="text-lg font-semibold mt-2">{result.original.title}</h3>
-                <p className="text-gray-500 mb-4">{result.original.meta_description}</p>
-                <MonacoEditor
-                  height="400px"
-                  language="markdown"
-                  value={result.original.content}
-                  options={{
-                    readOnly: true,
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    lineNumbers: "on",
-                    scrollBeyondLastLine: false,
-                  }}
-                />
-              </section>
-
-              {/* Enhanced Blog */}
-              <section className="p-6 rounded-2xl bg-green-50 border shadow-sm">
-                <h2 className="text-2xl font-bold text-green-700">Enhanced Blog</h2>
-                <h3 className="text-lg font-semibold mt-2">{result.enhanced.title}</h3>
-                <p className="text-gray-600 mb-4">{result.enhanced.meta_description}</p>
-                <MonacoEditor
-                  height="400px"
-                  language="markdown"
-                  value={editedContent}
-                  onChange={(val) => setEditedContent(val || "")}
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    lineNumbers: "on",
-                    scrollBeyondLastLine: false,
-                  }}
-                />
-                <button
-                  onClick={() => setShowDiff(true)}
-                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
-                >
-                  See What Changed
-                </button>
-              </section>
+        {/* Results */}
+        {result && (
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Original */}
+            <div className="
+              p-5 border border-border/60 rounded-2xl bg-card/70 backdrop-blur space-y-2
+              shadow-[0_0_15px_-6px_rgba(0,0,0,0.4)]
+            ">
+              <h2 className="text-lg font-medium">Original Blog</h2>
+              <MonacoEditor
+                height="420px"
+                language="markdown"
+                value={result.original.content}
+                options={{
+                  readOnly: true,
+                  fontSize: 14,
+                  minimap: { enabled: false },
+                }}
+              />
             </div>
-          )}
 
-          {/* --- DIFF MODAL --- */}
-          {showDiff && result && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-y-auto p-6 relative">
-                <button
-                  onClick={() => setShowDiff(false)}
-                  className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-xl"
-                >
-                  ✕
-                </button>
-                <h2 className="text-2xl font-semibold text-blue-700">Content Changes</h2>
-                <div className="mt-6 bg-gray-900 text-white rounded-xl p-4 font-mono overflow-auto max-h-[65vh] whitespace-pre-wrap">
-                  {renderDiff(result.original.content, editedContent)}
-                </div>
+            {/* Enhanced */}
+            <div className="
+              p-5 border border-border/60 rounded-2xl bg-card/70 backdrop-blur space-y-2
+              shadow-[0_0_15px_-6px_rgba(0,0,0,0.4)]
+            ">
+              <h2 className="text-lg font-medium text-ai-accent">
+                Enhanced Blog
+              </h2>
+              <MonacoEditor
+                height="420px"
+                language="markdown"
+                value={editedContent}
+                onChange={(v) => setEditedContent(v || "")}
+                options={{
+                  fontSize: 14,
+                  minimap: { enabled: false },
+                }}
+              />
+
+              <button
+                onClick={() => setShowDiff(true)}
+                className="mt-3 px-4 py-2 rounded-lg text-sm bg-secondary hover:bg-secondary/80 transition"
+              >
+                View Changes
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Diff Modal */}
+        {showDiff && result && (
+          <div className="fixed inset-0 grid place-items-center bg-black/50 z-50">
+            <div className="
+              bg-card rounded-2xl border border-border/70 shadow-xl 
+              max-w-4xl w-full max-h-[85vh] p-6 overflow-y-auto relative
+            ">
+              <button
+                onClick={() => setShowDiff(false)}
+                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </button>
+              <h2 className="text-xl font-semibold mb-4">AI Change Breakdown</h2>
+              <div className="
+                bg-black text-white rounded-xl p-4 font-mono overflow-auto 
+                max-h-[70vh] whitespace-pre-wrap text-sm
+              ">
+                {renderDiff(result.original.content, editedContent)}
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
+      </motion.div>
     </LocalErrorBoundary>
   );
 }

@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 function Input({
   className,
@@ -13,23 +13,35 @@ function Input({
       type={type}
       data-slot="input"
       className={cn(
-        // Base styles
-        "flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs outline-none transition-[color,box-shadow]",
-        // Visuals
-        "border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground",
-        "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium",
-        "dark:bg-input/30",
-        // State styles
-        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-        "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-        "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-        // Responsive font size
-        "md:text-sm",
+        `
+        w-full h-10
+        px-3 py-2
+        rounded-xl
+        border border-border
+        bg-transparent
+        text-sm font-medium tracking-tight
+        placeholder:text-muted-foreground
+        text-foreground
+        
+        transition-all duration-200 ease-out
+        outline-none
+
+        hover:border-ai-accent/30
+        hover:bg-white/5
+
+        focus-visible:border-ai-accent
+        focus-visible:ring-2 focus-visible:ring-ai-accent/30
+        focus-visible:bg-ai-accent-dim
+        
+        disabled:opacity-40 disabled:cursor-not-allowed
+        aria-invalid:border-red-500 aria-invalid:ring-red-500/20
+        file:bg-transparent file:border-0 file:text-sm file:font-medium
+      `,
         className
       )}
       {...props}
     />
-  )
+  );
 }
 
-export { Input }
+export { Input };

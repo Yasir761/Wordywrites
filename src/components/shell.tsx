@@ -11,20 +11,24 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     <SidebarProvider
       style={
         {
-          "--sidebar-width": "16rem",
-          "--header-height": "3rem",
+          "--sidebar-width": "17rem",
+          "--sidebar-width-icon": "3.7rem",
+          "--header-height": "3.5rem",
         } as React.CSSProperties
       }
+      className="flex w-full min-h-screen"
     >
-      <AppSidebar variant="inset" />
+      {/* Sidebar */}
+      <AppSidebar collapsible="offcanvas" />
 
-      <SidebarInset>
+      {/* Content + Top Header */}
+      <SidebarInset className="flex flex-col w-full">
         <SiteHeader />
 
         <main
           className={cn(
             "flex-1 relative p-6 min-h-screen",
-            "bg-white/80 backdrop-blur-xl",
+            "bg-white/80 backdrop-blur-lg",
             "transition-all duration-300 ease-out"
           )}
         >

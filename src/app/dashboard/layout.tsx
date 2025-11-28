@@ -1,28 +1,52 @@
-import { ReactNode } from "react"
-import { Inter, Poppins } from "next/font/google"
-import { DashboardShell } from "@/components/shell"
+"use client";
+import { ReactNode } from "react";
+import { DashboardShell } from "@/components/shell";
+import { Space_Grotesk, IBM_Plex_Serif, Literata } from "next/font/google";
+import { motion } from "framer-motion";
 
-const inter = Inter({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
+  variable: "--font-space-grotesk",
   display: "swap",
-  variable: "--font-inter",
-})
+});
 
-const poppins = Poppins({
+const ibmPlexSerif = IBM_Plex_Serif({
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-ibm-plex-serif",
   display: "swap",
-  weight: ["600", "700"],
-  variable: "--font-poppins",
-})
+});
+
+const literata = Literata({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-literata",
+  display: "swap",
+});
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div
-      className={`min-h-screen w-full bg-gradient-to-br from-[#f0f4ff] via-white to-[#f7f2ff] bg-fixed ${inter.variable} ${poppins.variable}`}
+      className={`
+        relative min-h-screen w-full 
+        bg-background text-foreground
+        font-[family-name:var(--font-space-grotesk)]
+        antialiased
+        ${spaceGrotesk.variable} 
+        ${ibmPlexSerif.variable} 
+        ${literata.variable}
+        bg-[radial-gradient(circle_at_50%_0%,_rgba(99,102,241,0.07),_transparent_60%)]
+        after:absolute after:inset-0 after:bg-[url('/noise.svg')] after:opacity-[0.04] after:pointer-events-none
+      `}
     >
-      <DashboardShell>
-        {children}
-      </DashboardShell>
+      {/* Page subtle fade-in */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
+      >
+        <DashboardShell>{children}</DashboardShell>
+      </motion.div>
     </div>
-  )
+  );
 }

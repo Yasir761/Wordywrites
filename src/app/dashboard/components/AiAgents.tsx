@@ -1,130 +1,229 @@
 
 "use client";
 
-import { Card } from "@/components/ui/card";
-import { Lock, Unlock, Zap } from "lucide-react";
-import clsx from "clsx";
+import * as React from "react";
 import { motion } from "framer-motion";
+import clsx from "clsx";
+import {
+  Target,
+  Search,
+  ListTree,
+  Type,
+  FileText,
+  Sparkles,
+  Hash,
+  Globe2,
+} from "lucide-react";
+
+import { Card } from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAgentsActivity } from "@/hooks/useAgentsActivity"; // ← USE YOUR SWR HOOK
-import { ReactElement, JSXElementConstructor, ReactNode, ReactPortal } from "react";
+import { useAgentsActivity } from "@/hooks/useAgentsActivity";
 
-// Label mapping for agent names
-const AGENT_LABELS: Record<string, string> = {
-  keyword: "Topic Keyword Finder",
-  blueprint: "SEO Outline Generator",
-  seo: "Meta Optimizer",
-  tone: "Tone & Voice Styler",
-  hashtags: "Hashtag Generator",
-  contentpreview: "Teaser Creator",
-  analyze: "Competitor Analyzer",
-  crawl: "Content Scraper",
-  blog: "AI Blog Writer",
-};
-
-// Helper to truncate description for preview
-function getPreview(text: string, wordLimit = 15) {
-  const words = text.split(" ");
-  return words.length <= wordLimit
-    ? text
-    : words.slice(0, wordLimit).join(" ") + "...";
-}
+// Canonical pipeline (7 steps only — Crawl/Enhance removed)
+const PIPELINE_STEPS = [
+  {
+    key: "keyword",
+    label: "Start with the Topic",
+    caption: "Everything begins with the right idea.",
+    icon: Target,
+  },
+  {
+    key: "analyze",
+    label: "Check Competition",
+    caption: "Know what top-ranking blogs are doing.",
+    icon: Search,
+  },
+  {
+    key: "blueprint",
+    label: "Shape the Outline",
+    caption: "Organize thoughts into an SEO-ready structure.",
+    icon: ListTree,
+  },
+  {
+    key: "tone",
+    label: "Tune the Voice",
+    caption: "Match your brand’s personality, not generic AI.",
+    icon: Type,
+  },
+  {
+    key: "blog",
+    label: "Let AI Write",
+    caption: "A full blog, tailored to your outline & tone.",
+    icon: FileText,
+  },
+  {
+    key: "seo",
+    label: "Optimize Meta",
+    caption: "Titles, meta description & links refined.",
+    icon: Sparkles,
+  },
+  {
+    key: "hashtags",
+    label: "Prep Social Hooks",
+    caption: "Generate trending tags to boost reach.",
+    icon: Hash,
+  },
+];
 
 export default function AIAgentsPanel() {
   const { data, error, isLoading } = useAgentsActivity();
+  const agents = Array.isArray(data?.agents) ? data!.agents : [];
 
-  if (isLoading) return <div className="text-sm text-gray-500">Loading smart modules...</div>;
-  if (error) return <div className="text-sm text-red-500">Failed to load agents</div>;
+  // attach active/inactive from API
+  const steps = PIPELINE_STEPS.map((step) => ({
+    ...step,
+    active: Boolean(agents.find((a: any) => a.key === step.key)?.active),
+  }));
 
-  const agents = data?.agents || [];
+  if (isLoading)
+    return (
+      <section className="mt-10">
+        <div className="h-7 w-40 rounded-md bg-muted/40 animate-pulse mb-4" />
+        <div className="h-40 rounded-xl bg-muted/30 animate-pulse" />
+      </section>
+    );
+
+  if (error)
+    return (
+      <section className="mt-10">
+        <p className="text-sm text-destructive">Failed to load modules.</p>
+      </section>
+    );
 
   return (
-    <TooltipProvider delayDuration={100}>
-      <section className="mt-10">
-        <h3 className="text-xl font-semibold text-gray-800 mb-6 tracking-tight">
-          Smart Content Modules
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {agents.map((agent: { key: string | number; active: any; name: any; description: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; }, i: number) => (
-            <motion.div
-              key={agent.key || i}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1, duration: 0.4 }}
-            >
-              <Card
-                className={clsx(
-                  "group relative flex flex-col justify-between rounded-2xl p-5 transition-all shadow-md backdrop-blur-md border overflow-hidden",
-                  agent.active
-                    ? "bg-white/80 border-indigo-200 ring-1 ring-indigo-300/30"
-                    : "bg-white/60 border-gray-200"
-                )}
-              >
-                {/* Hover shimmer effect */}
-                <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition duration-300 bg-gradient-to-br from-purple-100/20 via-transparent to-cyan-100/20 rounded-2xl" />
-
-                {/* Header */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div
-                    className={clsx(
-                      "w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-colors",
-                      agent.active
-                        ? "bg-indigo-100 text-indigo-600"
-                        : "bg-muted text-muted-foreground"
-                    )}
-                  >
-                    <Zap className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-gray-800 dark:text-white">
-                      {AGENT_LABELS[agent.key] || agent.name}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Description + Tooltip */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 cursor-help">
-                      {getPreview(String(agent.description || ""))}
-                    </p>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    className="max-w-xs bg-gray-800 text-white text-sm rounded-md px-3 py-2 shadow-lg"
-                  >
-                    {String(agent.description || "")}
-                  </TooltipContent>
-                </Tooltip>
-
-                {/* Footer: Lock/Unlock */}
-                <div className="flex justify-end mt-auto pt-2">
-                  {agent.active ? (
-                    <Unlock className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Lock className="w-5 h-5 text-red-500 cursor-pointer" />
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="top"
-                        className="bg-gray-800 text-white text-xs px-3 py-1 rounded-md shadow-lg"
-                      >
-                        Upgrade to unlock
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-              </Card>
-            </motion.div>
-          ))}
+    <TooltipProvider>
+      <section className="mt-14 space-y-10">
+        {/* Section Title */}
+        <div className="px-1">
+          <h3 className="text-lg font-heading font-semibold text-foreground tracking-tight">
+            AI Writing Pipeline
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            The full journey — from topic idea → optimized blog → social push.
+          </p>
         </div>
+
+        {/* Auto-wrap grid (no scroll) */}
+        <div className="flex flex-wrap gap-5">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const active = step.active;
+
+            return (
+              <motion.div
+                key={step.key}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05, ease: "easeOut" }}
+                className="w-full sm:w-[47%] lg:w-[31%] 2xl:w-[23%]"
+              >
+                <Card
+                  className={clsx(
+                    `
+                      p-4 h-full rounded-xl
+                      border bg-card shadow-[0_0_0_1px_var(--border)]
+                      transition-all
+                      hover:shadow-[0_0_0_1px_var(--ai-accent)]
+                    `,
+                    active && "border-ai-accent/40"
+                  )}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className={clsx(
+                        `
+                          w-10 h-10 rounded-lg flex items-center justify-center
+                          transition-colors
+                        `,
+                        active
+                          ? "bg-ai-accent-dim text-ai-accent"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </div>
+
+                    <h4 className="text-sm font-heading font-semibold text-foreground">
+                      {step.label}
+                    </h4>
+                  </div>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-xs text-muted-foreground leading-relaxed cursor-help">
+                        {step.caption}
+                      </p>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs">
+                      {step.caption}
+                    </TooltipContent>
+                  </Tooltip>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        {/* 🔥 Premium Standalone Crawl & Enhance Card */}
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+        >
+          <Card
+            className="
+              relative overflow-hidden rounded-2xl border border-ai-accent/40
+              bg-gradient-to-br from-ai-accent-dim/25 to-transparent
+              shadow-[0_0_0_1px_var(--ai-accent)]
+              px-6 py-7
+            "
+          >
+            {/* Glow element */}
+            <div className="pointer-events-none absolute inset-0 bg-ai-accent/10 blur-[80px]" />
+
+            <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div
+                  className="
+                    w-12 h-12 rounded-xl bg-ai-accent text-background
+                    flex items-center justify-center text-xl
+                  "
+                >
+                  <Globe2 className="w-6 h-6" />
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-heading font-semibold tracking-tight text-foreground">
+                    Crawl & Enhance
+                  </h4>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    Refresh existing content using live URLs — AI rewrites,
+                    restructures and upgrades SEO for better rankings.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => (window.location.href = "/dashboard/crawlenhance")}
+                className="
+                  inline-flex items-center justify-center px-5 py-2.5
+                  text-sm font-heading rounded-lg border border-ai-accent/50
+                  text-ai-accent hover:bg-ai-accent hover:text-background
+                  transition-all
+                "
+              >
+                Open Enhancer
+              </button>
+            </div>
+          </Card>
+        </motion.div>
       </section>
     </TooltipProvider>
   );
