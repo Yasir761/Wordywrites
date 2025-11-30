@@ -154,57 +154,57 @@ showToast({
         {isLoading && <Loader />}
 
         {/* Step 1: Input */}
-        {!isLoading && !blogData && step === "input" && (
-          <div className="flex flex-col items-center space-y-8 text-center">
-            <div className="space-y-6">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/30 backdrop-blur-sm">
-                <span className="text-sm font-medium text-cyan-300">✨ AI-Powered Content Creation</span>
-              </div>
-              <h1 className="text-5xl md:text-7xl font-black bg-gradient-to-r from-gray-900 via-purple-600 to-cyan-600 bg-clip-text text-transparent leading-tight">
-                Generate SEO Blogs
-                <span className="block bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
-                  Instantly
-                </span>
-              </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-                Transform your keywords into high-converting, SEO-optimized blog posts with our advanced AI technology
-              </p>
-            </div>
+       {/* STEP 1 — INPUT */}
+{!isLoading && !blogData && step === "input" && (
+  <div className="flex flex-col items-center text-center space-y-10">
+    <div>
+      <span className="text-xs px-4 py-1.5 rounded-full bg-ai-accent/10 border border-ai-accent/30 text-ai-accent font-medium tracking-wide">
+        ⚡ AI-Powered Content Creation
+      </span>
 
-            {/* Keyword/Subject Input */}
-            <div className="w-full max-w-2xl space-y-4">
-              <div className="relative flex rounded-xl bg-gray-50 border border-gray-200 overflow-hidden shadow-lg">
-                <input
-                  type="text"
-                  placeholder="Enter your keyword or subject..."
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  className="flex-grow px-6 py-4 text-lg bg-transparent text-gray-900 placeholder-gray-500 outline-none"
-                />
-              </div>
+      <h1 className="mt-6 text-[46px] md:text-[62px] font-black tracking-tight text-foreground">
+        Generate <span className="text-ai-accent">SEO Blogs</span> Instantly
+      </h1>
+      <p className="text-[17px] text-muted-foreground max-w-2xl mt-4">
+        Turn a simple keyword into a high-converting blog post with title,
+        metadata, hashtags and teasers — crafted by autonomous AI agents.
+      </p>
+    </div>
 
-              <div className="flex gap-4 justify-center">
-                <button
-                  onClick={() => {
-                    setSubject(keyword);
-                    generateBlog();
-                  }}
-                  disabled={!keyword.trim()}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 text-white rounded-lg shadow font-medium disabled:opacity-50"
-                >
-                  Use as Subject
-                </button>
-                <button
-                  onClick={fetchSuggestions}
-                  disabled={!keyword.trim()}
-                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg border border-gray-300 font-medium disabled:opacity-50"
-                >
-                  Find Trending Topics
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+    {/* MODULE CARD */}
+    <div className="w-full max-w-2xl bg-white/90 border border-border rounded-2xl shadow-xl p-6 space-y-5 backdrop-blur-md">
+      <input
+        type="text"
+        placeholder="e.g. Fitness apps for seniors..."
+        value={keyword}
+        onChange={(e) => setKeyword(e.target.value)}
+        className="w-full px-5 py-4 bg-muted/50 rounded-xl border border-border focus:border-ai-accent outline-none text-lg"
+      />
+
+      <div className="flex gap-4 justify-center">
+        <button
+          onClick={() => {
+            setSubject(keyword);
+            generateBlog();
+          }}
+          disabled={!keyword.trim()}
+          className="px-6 py-3 rounded-xl font-semibold bg-ai-accent text-white shadow hover:brightness-110 disabled:opacity-50"
+        >
+           Generate Blog
+        </button>
+
+        <button
+          onClick={fetchSuggestions}
+          disabled={!keyword.trim()}
+          className="px-6 py-3 rounded-xl font-medium bg-muted hover:bg-muted/70 border disabled:opacity-50"
+        >
+           Find Trending Topics
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
         {/* Step 2: Choose topic */}
       {/* Step 2: Choose topic */}
@@ -252,100 +252,105 @@ showToast({
 
 
         {/* Step 3: Generated Blog */}
-        {!isLoading && blogData && step === "generate" && (
-          <div className="space-y-8 animate-in fade-in duration-700">
-            {/* Keyword Card */}
-            <div className="relative group">
-              <div className="relative bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
-                <div className="flex items-center space-x-3 mb-3">
-                  <h3 className="text-sm font-semibold text-purple-600 uppercase tracking-wider">Target Keyword</h3>
-                </div>
-                <p className="text-2xl font-bold text-gray-900">{blogData.keyword}</p>
-              </div>
-            </div>
+        {/* STEP 3 — BLOG OUTPUT PIPELINE */}
+{!isLoading && blogData && step === "generate" && (
+  <div className="space-y-10 animate-in fade-in duration-700">
 
-            {/* SEO Title */}
-            <FeatureLock isLocked={userPlan === "Free"}>
-              <div className="relative bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
-                <h3 className="text-sm font-semibold text-cyan-600 uppercase tracking-wider mb-3">SEO Title</h3>
-                <p className="text-xl font-semibold text-gray-900 leading-relaxed">
-                  {blogData.seo?.optimized_title}
-                </p>
-              </div>
-            </FeatureLock>
+    {/* PIPELINE MARKER */}
+    <div className="flex items-center justify-center gap-2 text-sm font-medium text-ai-accent">
+      <span className="w-2 h-2 bg-ai-accent rounded-full"></span>
+      Blog Generated by WordyWrites AI Agents
+      <span className="w-2 h-2 bg-ai-accent rounded-full"></span>
+    </div>
 
-            {/* Meta Description */}
-            <FeatureLock isLocked={userPlan === "Free"}>
-              <div className="relative bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
-                <h3 className="text-sm font-semibold text-emerald-600 uppercase tracking-wider mb-3">Meta Description</h3>
-                <p className="text-gray-700 leading-relaxed">{blogData.seo?.meta_description}</p>
-              </div>
-            </FeatureLock>
+    {/* AI RESULTS PIPELINE */}
+    <div className="space-y-6">
+      
+      {/* KEYWORD */}
+      <div className="bg-card p-6 rounded-xl border border-border shadow-md">
+        <div className="text-xs uppercase tracking-wider font-semibold text-purple-600 mb-2">Target Keyword</div>
+        <div className="text-2xl font-bold">{blogData.keyword}</div>
+      </div>
 
-            {/* Hashtags */}
-            <FeatureLock isLocked={userPlan === "Free"}>
-              <div className="relative bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
-                <h3 className="text-sm font-semibold text-pink-600 uppercase tracking-wider mb-4">Hashtags</h3>
-                <div className="flex flex-wrap gap-3">
-                  {blogData.seo?.final_hashtags?.map((tag, index) => (
-                    <span
-                      key={tag}
-                      className="px-4 py-2 rounded-full bg-pink-50 border border-pink-200 text-pink-700 text-sm font-medium"
-                      style={{ animationDelay: `${index * 100}ms` }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </FeatureLock>
+      {/* SEO TITLE */}
+      <FeatureLock isLocked={userPlan === "Free"}>
+        <div className="bg-card p-6 rounded-xl border border-border shadow-md">
+          <div className="text-xs uppercase tracking-wider font-semibold text-cyan-600 mb-2">SEO Title</div>
+          <div className="text-xl font-semibold">{blogData.seo?.optimized_title}</div>
+        </div>
+      </FeatureLock>
 
-            {/* Blog Content */}
-            <div className="relative bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
-              <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wider mb-6">Blog Content</h3>
-              {isClient ? (
-  <BlogEditor content={blogData.blog ?? ""} onSave={(updated) => console.log("Updated Blog:", updated)} />
-) : (
-  <div className="text-sm text-muted-foreground">Loading editor…</div>
+      {/* META DESCRIPTION */}
+      <FeatureLock isLocked={userPlan === "Free"}>
+        <div className="bg-card p-6 rounded-xl border border-border shadow-md">
+          <div className="text-xs uppercase tracking-wider font-semibold text-emerald-600 mb-2">Meta Description</div>
+          <p className="text-[15px] text-muted-foreground leading-relaxed">
+            {blogData.seo?.meta_description}
+          </p>
+        </div>
+      </FeatureLock>
+
+      {/* HASHTAGS */}
+      <FeatureLock isLocked={userPlan === "Free"}>
+        <div className="bg-card p-6 rounded-xl border border-border shadow-md">
+          <div className="text-xs uppercase tracking-wider font-semibold text-pink-600 mb-4">Hashtags</div>
+          <div className="flex flex-wrap gap-2">
+            {blogData.seo?.final_hashtags?.map((tag) => (
+              <span key={tag} className="px-3 py-1 rounded-full bg-pink-50 border border-pink-200 text-pink-700 text-xs font-medium">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      </FeatureLock>
+
+      {/* BLOG CONTENT EDITOR */}
+      <div className="bg-card p-8 rounded-xl border border-border shadow-lg">
+        <div className="text-xs uppercase tracking-wider font-semibold text-indigo-600 mb-4">Blog Content Editor</div>
+        {isClient ? (
+          <BlogEditor content={blogData.blog ?? ""} onSave={(v) => console.log(v)} />
+        ) : (
+          <div className="text-sm text-muted-foreground">Loading editor…</div>
+        )}
+      </div>
+
+      {/* TEASERS */}
+      {blogData.contentpreview && (
+        <FeatureLock isLocked={userPlan === "Free"}>
+          <TeaserSection
+            teasers={blogData.contentpreview.teasers}
+            hashtags={blogData.contentpreview.hashtags}
+            engagementCTA={blogData.contentpreview.engagementCTA}
+          />
+        </FeatureLock>
+      )}
+    </div>
+
+    {/* ACTIONS */}
+    <div className="flex justify-center gap-4 pt-4">
+      <button
+        onClick={() => {
+          setBlogData(null);
+          setStep("input");
+          localStorage.removeItem("blogData");
+        }}
+        className="px-6 py-3 rounded-xl font-medium border bg-muted hover:bg-muted/80"
+      >
+        Generate New
+      </button>
+
+      <FeatureLock isLocked={userPlan === "Free"}>
+        <button
+          onClick={() => router.push("/dashboard/wordpress")}
+          className="px-6 py-3 rounded-xl font-semibold bg-ai-accent text-white shadow hover:brightness-110"
+        >
+          Publish Blog
+        </button>
+      </FeatureLock>
+    </div>
+  </div>
 )}
 
-            </div>
-
-            {/* Teasers */}
-            {blogData.contentpreview && (
-              <FeatureLock isLocked={userPlan === "Free"}>
-                <TeaserSection
-                  teasers={blogData.contentpreview.teasers}
-                  hashtags={blogData.contentpreview.hashtags}
-                  engagementCTA={blogData.contentpreview.engagementCTA}
-                />
-              </FeatureLock>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex justify-center space-x-4 pt-8">
-              <button
-                onClick={() => {
-                  setBlogData(null);
-                  setStep("input");
-                  localStorage.removeItem("blogData");
-                }}
-                className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg border border-gray-300 transition-all duration-300 font-medium"
-              >
-                Generate Another
-              </button>
-
-              <FeatureLock isLocked={userPlan === "Free"}>
-                <button
-                  onClick={() => router.push("/dashboard/wordpress")}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white rounded-lg transition-all duration-300 font-medium shadow-lg"
-                >
-                  Publish Blog
-                </button>
-              </FeatureLock>
-            </div>
-          </div>
-        )}
       </div>
     </div>
     </LocalErrorBoundary>
