@@ -597,3 +597,24 @@
     ) 1;
   }
 }
+
+
+
+.premium-card {
+  @apply bg-card/80 backdrop-blur-xl border border-border/60 rounded-2xl
+         shadow-[0_8px_24px_-6px_rgba(0,0,0,0.20),0_0_40px_-10px_var(--ai-accent)]
+         hover:shadow-[0_12px_38px_-4px_rgba(0,0,0,0.26),0_0_55px_-6px_var(--ai-accent)]
+         p-8 transition-all duration-300 hover:-translate-y-[2px];
+}
+
+.section-title {
+  @apply text-sm uppercase font-semibold tracking-wider mb-2;
+}
+
+.section-text {
+  @apply text-2xl font-bold text-foreground;
+}
+
+.tag-badge {
+  @apply px-3 py-1 rounded-full bg-pink-50 border border-pink-200 text-pink-700 text-xs font-medium;
+}
