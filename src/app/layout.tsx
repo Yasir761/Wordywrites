@@ -39,24 +39,35 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning className={`${spaceGrotesk.variable} ${ibmPlexSerif.variable} ${literata.variable}`}>
-        <head>
-          <Script
-            strategy="afterInteractive"
-            src="https://www.googletagmanager.com/gtag/js?id=G-PL4XKQRECG"
-          />
-          <Script id="google-analytics" strategy="afterInteractive">
-            {`
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-PL4XKQRECG');
-            `}
-          </Script>
-        </head>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <html lang="en" suppressHydrationWarning>
+          <head>
+            <Script
+              strategy="afterInteractive"
+              src="https://www.googletagmanager.com/gtag/js?id=G-PL4XKQRECG"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-PL4XKQRECG');
+              `}
+            </Script>
+          </head>
 
-        <body className="font-sans bg-background text-foreground min-h-screen antialiased">
-          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <body
+            suppressHydrationWarning
+            className={`font-sans min-h-screen antialiased
+              ${spaceGrotesk.variable} ${ibmPlexSerif.variable} ${literata.variable}
+              bg-background text-foreground transition-colors duration-300
+            `}
+          >
             <SWRProvider>
               <ClientOnly>
                 {children}
@@ -64,9 +75,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </ClientOnly>
             </SWRProvider>
             <Analytics />
-          </ThemeProvider>
-        </body>
-      </html>
+          </body>
+        </html>
+      </ThemeProvider>
     </ClerkProvider>
   )
 }
+
+

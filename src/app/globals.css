@@ -574,6 +574,9 @@
   .bg-charcoal { background-color: var(--charcoal); }
   .bg-slate-dark { background-color: var(--slate-dark); }
   .bg-slate { background-color: var(--slate); }
+  /* .section-surface {
+  @apply bg-card border border-border/60 rounded-2xl p-8 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.45)] transition-all;
+} */
   
   /* AI Accent Utilities */
   .text-ai-accent { color: var(--ai-accent); }
