@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,7 +12,7 @@ const FeatureLock = ({ isLocked, children }: { isLocked: boolean; children: Reac
   <div className="relative">
     <div className={isLocked ? "blur-sm select-none pointer-events-none" : ""}>{children}</div>
     {isLocked && (
-      <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 rounded-xl backdrop-blur-sm">
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 dark:bg-background/90 rounded-xl backdrop-blur-sm">
         <button
           onClick={() => (window.location.href = "/pricing")}
           className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold shadow hover:from-purple-700 hover:to-blue-700"
@@ -103,14 +102,14 @@ export default function BlogGenerator() {
 
   return (
     <LocalErrorBoundary>
-      <div className="min-h-screen bg-white relative">
+      <div className="min-h-screen bg-background dark:bg-background text-foreground relative">
         <div className="max-w-4xl mx-auto py-20 px-4 space-y-14">
           {isLoading && <Loader />}
 
           {/* STEP 1 — INPUT */}
           {!isLoading && !blogData && step === "input" && (
             <div className="flex flex-col items-center text-center space-y-10">
-              <h1 className="text-[46px] md:text-[62px] font-semibold leading-[1.1]">
+              <h1 className="text-[46px] md:text-[62px] font-semibold leading-[1.1] text-foreground">
                 Generate <span className="text-ai-accent font-extrabold">SEO Blogs</span> Instantly
               </h1>
               <p className="text-[16px] text-muted-foreground max-w-2xl">
@@ -119,8 +118,9 @@ export default function BlogGenerator() {
 
               {/* Input Card */}
               <div className="
-                w-full max-w-2xl bg-white border border-border/60 rounded-2xl p-7 space-y-6
+                w-full max-w-2xl bg-card border border-border rounded-2xl p-7 space-y-6
                 shadow-[0_4px_30px_-12px_rgba(0,0,0,0.3)]
+                dark:shadow-[0_4px_30px_-12px_rgba(0,0,0,0.5)]
                 hover:shadow-[0_4px_40px_-6px_var(--ai-accent)]
                 transition-all duration-300
               ">
@@ -130,8 +130,10 @@ export default function BlogGenerator() {
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   className="
-                    w-full px-5 py-4 rounded-xl bg-muted/40 border border-border
-                    focus:border-ai-accent outline-none text-lg
+                    w-full px-5 py-4 rounded-xl bg-secondary border border-border
+                    text-foreground placeholder-muted-foreground
+                    focus:border-primary outline-none text-lg
+                    transition-colors duration-200
                   "
                 />
 
@@ -139,14 +141,14 @@ export default function BlogGenerator() {
                   <button
                     onClick={() => { setSubject(keyword); generateBlog(); }}
                     disabled={!keyword.trim()}
-                    className="px-6 py-3 rounded-xl font-semibold bg-ai-accent text-white shadow hover:brightness-110 disabled:opacity-50"
+                    className="px-6 py-3 rounded-xl font-semibold bg-primary text-white shadow hover:brightness-110 disabled:opacity-50 transition-all"
                   >
                     Generate Blog
                   </button>
                   <button
                     onClick={fetchSuggestions}
                     disabled={!keyword.trim()}
-                    className="px-6 py-3 rounded-xl font-medium bg-muted hover:bg-muted/70 border disabled:opacity-50"
+                    className="px-6 py-3 rounded-xl font-medium bg-secondary text-foreground border border-border hover:bg-secondary/80 disabled:opacity-50 transition-all"
                   >
                     Find Trending Topics
                   </button>
@@ -158,7 +160,7 @@ export default function BlogGenerator() {
           {/* STEP 2 — TOPIC SELECT */}
           {!isLoading && !blogData && step === "choose-topic" && (
             <div className="space-y-6">
-              <h3 className="text-2xl font-bold text-center">Choose a Topic</h3>
+              <h3 className="text-2xl font-bold text-center text-foreground">Choose a Topic</h3>
               <div className="grid gap-4">
                 {suggestedTopics.map((topic, i) => {
                   const chosen = typeof topic === "string" ? topic : topic.title;
@@ -167,7 +169,8 @@ export default function BlogGenerator() {
                       key={i}
                       onClick={() => { setSubject(chosen); generateBlog(); }}
                       className="
-                        text-left px-6 py-4 rounded-xl border bg-white
+                        text-left px-6 py-4 rounded-xl border bg-card text-foreground
+                        border-border hover:border-primary/50
                         hover:shadow-[0_4px_40px_-6px_var(--ai-accent)]
                         transition-all duration-200
                       "
@@ -184,7 +187,7 @@ export default function BlogGenerator() {
                   );
                 })}
               </div>
-              <button className="text-sm text-muted-foreground hover:underline mx-auto block" onClick={() => setStep("input")}>
+              <button className="text-sm text-muted-foreground hover:text-foreground hover:underline mx-auto block transition-colors" onClick={() => setStep("input")}>
                 ← Back
               </button>
             </div>
@@ -257,7 +260,7 @@ export default function BlogGenerator() {
               <div className="flex justify-center gap-4">
                 <button
                   onClick={() => { setBlogData(null); setStep("input"); localStorage.removeItem("blogData"); }}
-                  className="px-6 py-3 rounded-xl font-medium border bg-muted hover:bg-muted/80 transition-all"
+                  className="px-6 py-3 rounded-xl font-medium border border-border bg-secondary text-foreground hover:bg-secondary/80 transition-all"
                 >
                   Generate New
                 </button>
@@ -265,7 +268,7 @@ export default function BlogGenerator() {
                 <FeatureLock isLocked={userPlan === "Free"}>
                   <button
                     onClick={() => router.push("/dashboard/wordpress")}
-                    className="px-6 py-3 rounded-xl font-semibold bg-ai-accent text-white shadow-lg hover:brightness-110 transition-all"
+                    className="px-6 py-3 rounded-xl font-semibold bg-primary text-white shadow-lg hover:brightness-110 transition-all"
                   >
                     Publish Blog
                   </button>
