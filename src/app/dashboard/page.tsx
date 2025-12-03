@@ -9,68 +9,71 @@ import HeroValueBanner from "./components/HeroValueBanner";
 
 import { motion } from "framer-motion";
 
-
 export default function DashboardPage() {
   return (
-    <div className="space-y-12 px-4 xl:px-6 pb-12">
+    <div className="px-4 xl:px-8 pb-24 space-y-20">
       
-      {/* Hero */}
-      <motion.div
+      {/*  HERO */}
+      <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
+        className="pt-4"
       >
         <HeroValueBanner />
-      </motion.div>
+      </motion.section>
 
-      {/* Stats */}
-      <motion.div
+      {/*  METRICS */}
+      <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut", delay: 0.05 }}
+        className="section-surface"
       >
         <OverviewCards />
-      </motion.div>
+      </motion.section>
 
-      {/* Usage Chart */}
-      <motion.div
+      {/*  CHART */}
+      <motion.section
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut", delay: 0.10 }}
+        className="section-surface"
       >
         <UsageChart />
-      </motion.div>
+      </motion.section>
 
-      {/* Recent Blogs */}
-      <motion.div
+      {/*  RECENT BLOGS */}
+      <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut", delay: 0.15 }}
+        className="section-surface"
       >
         <RecentBlogs />
-      </motion.div>
+      </motion.section>
 
-      {/* Smart Tools */}
-      <motion.div
+      {/* SMART TOOLS */}
+      <motion.section
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut", delay: 0.20 }}
+        className="section-surface"
       >
         <SmartTools />
-      </motion.div>
+      </motion.section>
 
-      {/* If Agents get added later */}
+      {/*  Future Agents Panel */}
       {/* 
-      <motion.div
+      <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut", delay: 0.25 }}
+        className="section-surface"
       >
         <AIAgentsPanel />
-      </motion.div>
+      </motion.section>
       */}
-
-
     </div>
   );
 }
