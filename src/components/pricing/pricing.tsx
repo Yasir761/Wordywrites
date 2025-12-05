@@ -47,7 +47,7 @@ const plans = [
     ],
     cta: 'Go Pro',
     highlight: true,
-    priceId: 'pri_01k3amkh5jpxnsb12by5ae99fw', // Your actual price ID
+    priceId: 'pri_01k3amkh5jpxnsb12by5ae99fw', 
   },
 ]
 
@@ -90,7 +90,7 @@ try {
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ priceId: "pri_01k3drxf4gghv9mfsx8g5ab6sy" }),
+      body: JSON.stringify({ priceId }),
     })
 
     if (!res.ok) {
