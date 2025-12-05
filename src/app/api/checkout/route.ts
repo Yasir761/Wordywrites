@@ -127,6 +127,7 @@ export async function POST(req: Request) {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.PADDLE_PRODUCTION_API}`,
+        
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -135,6 +136,7 @@ export async function POST(req: Request) {
         success_url: "https://wordywrites.app/dashboard",
       }),
     });
+console.log("Paddle key in env:", process.env.PADDLE_PRODUCTION_API);
 
     const json = await res.json();
 
