@@ -1,6 +1,10 @@
 import { SignIn } from "@clerk/nextjs";
 
 export default function SignInPage() {
+   const redirect =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("redirect_url") || "/dashboard"
+      : "/dashboard";
   return (
     <div className="bg-gradient-to-br from-indigo-50 via-white to-purple-100 flex justify-center items-center min-h-screen">
       <SignIn
@@ -20,7 +24,7 @@ export default function SignInPage() {
         path="/sign-in"
         routing="path"
         signUpUrl="/sign-up"
-        afterSignInUrl="/dashboard" //  force redirect after sign-in
+        afterSignInUrl={redirect} //  force redirect after sign-in
       />
     </div>
   );
