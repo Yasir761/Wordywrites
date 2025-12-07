@@ -260,6 +260,9 @@ const plans = [
 export default function Pricing() {
   const [paddle, setPaddle] = useState<Paddle>();
   const { isSignedIn } = useAuth();
+  console.log("Signed in:", isSignedIn);
+console.log("Redirect_param:", window.location.href);
+
 
   // 1) Initialize Paddle
   useEffect(() => {
@@ -284,7 +287,7 @@ export default function Pricing() {
   const handleCheckout = async (priceId?: string) => {
     if (!isSignedIn) {
       // redirect for login and return back to checkout
-      window.location.href = "/sign-in?redirect_url=/pricing?plan=pro";
+      window.location.href = `/sign-in?redirect_url=${encodeURIComponent("/pricing?plan=pro")}`;
       return;
     }
 

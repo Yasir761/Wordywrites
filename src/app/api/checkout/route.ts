@@ -136,7 +136,7 @@ export async function POST(req: Request) {
         success_url: "https://wordywrites.app/dashboard",
       }),
     });
-console.log("Paddle key in env:", process.env.PADDLE_PRODUCTION_API);
+
 
     const json = await res.json();
 
