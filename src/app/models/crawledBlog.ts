@@ -1,4 +1,4 @@
-// models/crawledBlog.ts
+
 import mongoose from "mongoose";
 
 const CrawledBlogSchema = new mongoose.Schema({
