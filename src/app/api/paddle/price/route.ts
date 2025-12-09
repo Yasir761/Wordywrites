@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     // Get client IP for region-based price
     const clientIp =
       req.headers.get("x-forwarded-for")?.split(",")[0] ||
-      req.ip ||
+      req.headers.get("x-real-ip") ||
       "1.1.1.1"; // fallback
 
     const res = await fetch(
