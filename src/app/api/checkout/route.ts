@@ -94,69 +94,172 @@
 
 
 
+// import { NextResponse } from "next/server";
+// import { auth } from "@clerk/nextjs/server";
+// import * as Sentry from "@sentry/nextjs";
+
+// export async function POST(req: Request) {
+//   const transactionSpan = Sentry.startSpan({ name: "paddle.transaction.create" }, (span) => span);
+
+//   try {
+//     const { userId } = await auth();
+//     if (!userId) {
+//       Sentry.captureMessage("Unauthorized payment attempt", "warning");
+//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//     }
+
+//     const body = await req.json();
+//     const { priceId } = body;
+
+//     Sentry.addBreadcrumb({
+//       category: "payment",
+//       message: "Starting Paddle transaction",
+//       data: { priceId, userId },
+//       level: "info",
+//     });
+
+//     if (!priceId) {
+//       Sentry.captureMessage("Missing priceId in Paddle checkout");
+//       return NextResponse.json({ error: "Price ID is required" }, { status: 400 });
+//     }
+
+//     const res = await fetch("https://api.paddle.com/transactions", {
+//       method: "POST",
+//       headers: {
+//         Authorization: `Bearer ${process.env.PADDLE_PRODUCTION_API}`,
+        
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         items: [{ price_id: priceId, quantity: 1 }],
+//         custom_data: { userId },
+//         success_url: "https://wordywrites.app/dashboard",
+//       }),
+//     });
+
+
+//     const json = await res.json();
+
+//     if (!res.ok) {
+//       Sentry.captureException(new Error("Paddle transaction failed"), {
+//         extra: {
+//           status: res.status,
+//           response: json,
+//         },
+//       });
+
+//       return NextResponse.json({ error: json }, { status: 500 });
+//     }
+
+//     const checkoutUrl = json.data?.checkout?.url;
+//     if (!checkoutUrl) {
+//       Sentry.captureException(new Error("Missing checkout URL in Paddle response"), {
+//         extra: json,
+//       });
+
+//       return NextResponse.json(
+//         { error: "No checkout URL available" },
+//         { status: 500 }
+//       );
+//     }
+
+//     return NextResponse.json({
+//       transactionId: json.data.id,
+//       checkoutUrl,
+//       status: json.data.status,
+//     });
+//   } catch (err) {
+//     Sentry.captureException(err);
+//     return NextResponse.json(
+//       { error: err instanceof Error ? err.message : "Server error" },
+//       { status: 500 }
+//     );
+//   } finally {
+//     transactionSpan.end();
+//   }
+// }
+
+
+
+
+// Geo-location based version
+
+
+
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
 
 export async function POST(req: Request) {
-  const transactionSpan = Sentry.startSpan({ name: "paddle.transaction.create" }, (span) => span);
-
   try {
     const { userId } = await auth();
     if (!userId) {
-      Sentry.captureMessage("Unauthorized payment attempt", "warning");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
     const { priceId } = body;
-
-    Sentry.addBreadcrumb({
-      category: "payment",
-      message: "Starting Paddle transaction",
-      data: { priceId, userId },
-      level: "info",
-    });
-
     if (!priceId) {
-      Sentry.captureMessage("Missing priceId in Paddle checkout");
       return NextResponse.json({ error: "Price ID is required" }, { status: 400 });
+    }
+
+    //  Detect customer IP to apply correct currency in Paddle
+    const forwarded = req.headers.get("x-forwarded-for");
+    const ip = forwarded ? forwarded.split(",")[0] : undefined;
+
+    //  Currency is chosen automatically by Paddle based on currency_code + IP
+    const priceLookupRes = await fetch(
+      `https://api.paddle.com/prices/lookup?price_id=${priceId}${
+        ip ? `&customer_ip=${ip}` : ""
+      }`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PADDLE_PRODUCTION_API}`,
+        },
+      }
+    );
+
+    const priceLookupJson = await priceLookupRes.json();
+    const price = priceLookupJson?.data?.[0];
+
+    if (!price) {
+      Sentry.captureException(new Error("Paddle price lookup failed"), {
+        extra: priceLookupJson,
+      });
+      return NextResponse.json(
+        { error: "Paddle price lookup failed" },
+        { status: 500 }
+      );
     }
 
     const res = await fetch("https://api.paddle.com/transactions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.PADDLE_PRODUCTION_API}`,
-        
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        items: [{ price_id: priceId, quantity: 1 }],
+        items: [
+          {
+            price_id: priceId,
+            quantity: 1,
+            //  Forces correct local currency
+            currency_code: price.currency_code,
+          },
+        ],
+        customer_ip_address: ip,
         custom_data: { userId },
         success_url: "https://wordywrites.app/dashboard",
       }),
     });
 
-
     const json = await res.json();
-
     if (!res.ok) {
-      Sentry.captureException(new Error("Paddle transaction failed"), {
-        extra: {
-          status: res.status,
-          response: json,
-        },
-      });
-
       return NextResponse.json({ error: json }, { status: 500 });
     }
 
     const checkoutUrl = json.data?.checkout?.url;
     if (!checkoutUrl) {
-      Sentry.captureException(new Error("Missing checkout URL in Paddle response"), {
-        extra: json,
-      });
-
       return NextResponse.json(
         { error: "No checkout URL available" },
         { status: 500 }
@@ -168,13 +271,11 @@ export async function POST(req: Request) {
       checkoutUrl,
       status: json.data.status,
     });
-  } catch (err) {
+  } catch (err: any) {
     Sentry.captureException(err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Server error" },
+      { error: err.message || "Server error" },
       { status: 500 }
     );
-  } finally {
-    transactionSpan.end();
   }
 }
