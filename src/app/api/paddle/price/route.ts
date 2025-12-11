@@ -147,9 +147,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Missing priceId" }, { status: 400 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
+    const baseUrl = process.env.APP_URL || req.nextUrl.origin;
 
-    // ✅ FIX: Correct domain for production
+    //  FIX: Correct domain for production
     const locationRes = await fetch(`${baseUrl}/api/user/location`, {
       headers: req.headers,
     });
