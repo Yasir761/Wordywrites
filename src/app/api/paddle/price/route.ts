@@ -137,8 +137,6 @@
 
 
 
-
-
 import { NextRequest, NextResponse } from "next/server";
 import { LOCAL_PRICES, DEFAULT_PRICE } from "@/lib/localPricing";
 
@@ -149,26 +147,28 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Missing priceId" }, { status: 400 });
     }
 
-    // Get user's country
-    const locationRes = await fetch("http://localhost:3000/api/user/location", {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
+
+    // ✅ FIX: Correct domain for production
+    const locationRes = await fetch(`${baseUrl}/api/user/location`, {
       headers: req.headers,
     });
+
     const locationData = await locationRes.json();
     const countryCode = locationData.country_code || "US";
 
-    // Get price from table
-    const priceConfig = LOCAL_PRICES[countryCode as keyof typeof LOCAL_PRICES] || DEFAULT_PRICE;
+    const priceConfig =
+      LOCAL_PRICES[countryCode as keyof typeof LOCAL_PRICES] ||
+      DEFAULT_PRICE;
 
-    // FORMAT THE PRICE  This is what was missing!
-    let formatted: string;
-    if (priceConfig.currency === "INR" || priceConfig.currency === "JPY") {
-      formatted = `${priceConfig.symbol}${Math.round(priceConfig.amount)}`;
-    } else {
-      formatted = `${priceConfig.symbol}${priceConfig.amount.toFixed(2)}`;
-    }
+    // Format price correctly
+    let formatted =
+      priceConfig.currency === "INR" || priceConfig.currency === "JPY"
+        ? `${priceConfig.symbol}${Math.round(priceConfig.amount)}`
+        : `${priceConfig.symbol}${priceConfig.amount.toFixed(2)}`;
 
     return NextResponse.json({
-      formatted,  // ← This is what the frontend expects!
+      formatted,
       currency: priceConfig.currency,
       country_code: countryCode,
       amount: priceConfig.amount,
@@ -181,4 +181,5 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
 
