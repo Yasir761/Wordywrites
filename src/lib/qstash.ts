@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     await client.publishJSON({
-      url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/workers/orchestrator`,
+      url: `${process.env.APP_URL}/api/workers/orchestrator`,
       body: body,
       retries: 3, // Retry up to 3 times on failure
     });
