@@ -59,13 +59,9 @@ export default function BlogGenerator() {
       .then((data) => setUserPlan(data.plan))
       .catch(() => setUserPlan("Free"));
 
-    const saved = localStorage.getItem("blogData");
-    if (saved) setBlogData(JSON.parse(saved));
+    
   }, []);
 
-  useEffect(() => {
-    if (blogData) localStorage.setItem("blogData", JSON.stringify(blogData));
-  }, [blogData]);
 
   const fetchSuggestions = async () => {
     if (!keyword.trim()) return;
@@ -259,7 +255,7 @@ export default function BlogGenerator() {
               {/* ACTIONS */}
               <div className="flex justify-center gap-4">
                 <button
-                  onClick={() => { setBlogData(null); setStep("input"); localStorage.removeItem("blogData"); }}
+                  onClick={() => { setBlogData(null); setStep("input");  }}
                   className="px-6 py-3 rounded-xl font-medium border border-border bg-secondary text-foreground hover:bg-secondary/80 transition-all"
                 >
                   Generate New
@@ -281,3 +277,6 @@ export default function BlogGenerator() {
     </LocalErrorBoundary>
   );
 }
+
+
+
