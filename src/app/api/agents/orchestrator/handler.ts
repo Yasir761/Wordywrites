@@ -391,53 +391,53 @@ export async function orchestratorHandler({
   keyword: string;
   crawlUrl?: string;
 }) {
-  console.log(`🚀 QStash triggered orchestrator for: "${keyword}"`);
+  console.log(` QStash triggered orchestrator for: "${keyword}"`);
   const startAll = performance.now();
 
-  // 1️⃣ Connect to DB
+  //  Connect to DB
   await connectDB();
 
-  // 2️⃣ Handle missing user (for local or Postman testing)
+  //  Handle missing user (for local or Postman testing)
   if (!userId) {
     if (process.env.NODE_ENV === "development") {
-      console.warn("⚠️ No userId provided — using fallback dev_user_1234");
+      console.warn(" No userId provided — using fallback dev_user_1234");
       userId = "dev_user_1234";
     } else {
-      console.error("❌ Missing userId in production");
+      console.error(" Missing userId in production");
       throw new Error("Unauthorized: Missing userId");
     }
   }
 
-  // 3️⃣ Clerk user lookup (with fallback email)
+  // 3️ Clerk user lookup (with fallback email)
   let email = "system@wordywrites.ai";
   try {
     const user = await clerkClient.users.getUser(userId);
     email = user?.emailAddresses?.[0]?.emailAddress || email;
-    console.log(`👤 Clerk user found: ${email}`);
+    console.log(` Clerk user found: ${email}`);
   } catch (err) {
     const message =
       err instanceof Error ? err.message : typeof err === "string" ? err : String(err);
-    console.warn("⚠️ Clerk lookup failed:", message);
-    console.log("🧩 Using fallback email:", email);
+    console.warn(" Clerk lookup failed:", message);
+    console.log(" Using fallback email:", email);
   }
 
-  // 4️⃣ Ensure user record exists
+  //  Ensure user record exists
   await UserModel.findOneAndUpdate(
     { email },
     { userId, email },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
-  console.log("✅ User record ensured in DB");
+  console.log(" User record ensured in DB");
 
-  // 5️⃣ Get plan (fallback to Pro for testing)
+  //  Get plan (fallback to Pro for testing)
   const plan = await getUserPlan(userId).catch(() => ({
     name: "Pro",
     aiAgents: Object.keys(AGENT_ENDPOINTS),
   }));
 
-  console.log(`💳 Active Plan: ${plan.name}`);
+  console.log(` Active Plan: ${plan.name}`);
 
-  // 6️⃣ Define cache keys
+  //  Define cache keys
   const keys = {
     analyze: `agent:analyze:${keyword}`,
     keyword: `agent:keyword:${keyword}`,
@@ -449,15 +449,15 @@ export async function orchestratorHandler({
     contentpreview: `agent:contentpreview:${keyword}`,
   };
 
-  // 7️⃣ Prefetch Redis cache
-  console.time("🧠 REDIS_MGET");
+  //  Prefetch Redis cache
+  console.time(" REDIS_MGET");
   const cached = await batchGet(Object.values(keys));
-  console.timeEnd("🧠 REDIS_MGET");
+  console.timeEnd(" REDIS_MGET");
 
   const cacheStatus: Record<string, string> = {};
   const ttl = 60 * 60 * 24; // 24 hours
 
-  // 8️⃣ Agent call helper
+  //  Agent call helper
   const callAgent = async (agent: keyof typeof AGENT_ENDPOINTS, body: any) => {
     if (!plan.aiAgents.includes(agent))
       throw { agent, status: 403, error: `Agent "${agent}" not allowed for ${plan.name}` };
@@ -471,25 +471,25 @@ export async function orchestratorHandler({
     const json = await res.json();
     if (!res.ok) throw { status: res.status, agent, error: json };
 
-    console.log(`⚙️ ${agent} generated in ${(performance.now() - start).toFixed(1)}ms`);
+    console.log(` ${agent} generated in ${(performance.now() - start).toFixed(1)}ms`);
     return json;
   };
 
-  // 9️⃣ Cache retrieval or regeneration
+  //  Cache retrieval or regeneration
   async function getOrGenerate(
     idx: number,
     agent: keyof typeof AGENT_ENDPOINTS,
     body: any
   ) {
     if (cached[idx]) {
-      cacheStatus[agent] = "🟢 CACHE HIT";
+      cacheStatus[agent] = " CACHE HIT";
       return cached[idx];
     }
-    cacheStatus[agent] = "🟡 MISS → generating";
+    cacheStatus[agent] = " MISS → generating";
     return await callAgent(agent, body);
   }
 
-  // 🔟 Parallel agent orchestration
+  //  Parallel agent orchestration
   const [analyze, keywordData] = await Promise.all([
     getOrGenerate(0, "analyze", { keyword }),
     getOrGenerate(1, "keyword", { keyword }),
@@ -528,7 +528,7 @@ export async function orchestratorHandler({
 
   const crawl = crawlUrl ? await callAgent("crawl", { url: crawlUrl }) : null;
 
-  // 💾 Cache all new results
+  //  Cache all new results
   const newEntries: Array<[string, any, number]> = [];
   const results: Record<keyof typeof keys, any> = {
     analyze,
@@ -547,11 +547,11 @@ export async function orchestratorHandler({
     }
   });
 
-  console.time("💾 REDIS_PIPELINE_SET");
+  console.time(" REDIS_PIPELINE_SET");
   await batchSet(newEntries);
-  console.timeEnd("💾 REDIS_PIPELINE_SET");
+  console.timeEnd(" REDIS_PIPELINE_SET");
 
-  // 🧱 Save results to DB
+  //  Save results to DB
   await BlogModel.create({
     userId,
     keywordAgent: { keyword, intent: keywordData.intent },
@@ -566,13 +566,13 @@ export async function orchestratorHandler({
     createdAt: new Date(),
   });
 
-  // 🧩 Cache summary
-  console.log("\n🧩 CACHE STATUS SUMMARY:");
+  //  Cache summary
+  console.log("\n CACHE STATUS SUMMARY:");
   Object.entries(cacheStatus).forEach(([agent, status]) =>
     console.log(`  → ${agent.padEnd(15)} : ${status}`)
   );
 
   console.log(
-    `\n✅ Orchestrator completed in ${(performance.now() - startAll).toFixed(2)}ms`
+    `\n Orchestrator completed in ${(performance.now() - startAll).toFixed(2)}ms`
   );
 }

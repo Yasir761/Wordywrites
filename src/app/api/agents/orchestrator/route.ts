@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
         });
 
         const job = await client.publishJSON({
-          url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/workers/orchestrator`,
+          url: `${process.env.APP_URL}/api/workers/orchestrator`,
           body: { userId, keyword, crawlUrl },
           retries: 1,
         });
