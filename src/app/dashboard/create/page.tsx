@@ -77,24 +77,103 @@ export default function BlogGenerator() {
     setStep("choose-topic");
   };
 
-  const generateBlog = async () => {
-    if (!subject) return;
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/agents/orchestrator`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keyword, subject, tone }),
-      });
-      const data = await res.json();
-      setBlogData(data);
-      setStep("generate");
-      showToast({ type: "success", title: "Blog generated", description: "You can now edit and publish it." });
-    } catch {
-      showToast({ type: "error", title: "Generation failed", description: "Try again later." });
-    }
-    setIsLoading(false);
-  };
+  // const generateBlog = async () => {
+  //   if (!subject) return;
+  //   setIsLoading(true);
+  //   try {
+  //     const res = await fetch(`/api/agents/orchestrator`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ keyword, subject, tone, userId: "" }),
+  //     });
+  //     const data = await res.json();
+  //     setBlogData(data);
+  //     setStep("generate");
+  //     showToast({ type: "success", title: "Blog generated", description: "You can now edit and publish it." });
+  //   } catch {
+  //     showToast({ type: "error", title: "Generation failed", description: "Try again later." });
+  //   }
+  //   setIsLoading(false);
+  // };
+
+const generateBlog = async () => {
+  if (!subject) return;
+  setIsLoading(true);
+
+  try {
+    const res = await fetch(`/api/agents/orchestrator`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keyword, subject, tone }),
+    });
+
+    await res.json();
+
+    showToast({
+      type: "success",
+      title: "Generation started",
+      description: "Your blog is being generated.",
+    });
+
+    setStep("generate");
+
+    // ✅ START POLLING ONLY AFTER GENERATION
+    const pollInterval = 3000;
+    const maxAttempts = 12;
+    let attempts = 0;
+
+    const poll = setInterval(async () => {
+      attempts++;
+
+      try {
+        const res = await fetch("/api/blogs/latest");
+
+        if (!res.ok) {
+          clearInterval(poll);
+          return;
+        }
+
+        const blog = await res.json();
+
+        if (blog?.blogAgent?.blog) {
+          setBlogData({
+            keyword: blog.keywordAgent.keyword,
+            seo: blog.seoAgent,
+            blog: blog.blogAgent.blog,
+            contentpreview: blog.ContentPreviewAgent,
+          });
+
+          clearInterval(poll);
+
+          showToast({
+            type: "success",
+            title: "Blog ready",
+            description: "Your blog has been generated successfully.",
+          });
+        }
+
+        if (attempts >= maxAttempts) {
+          clearInterval(poll);
+          showToast({
+            type: "warning",
+            title: "Still generating…",
+            description: "Please refresh shortly.",
+          });
+        }
+      } catch {
+        clearInterval(poll);
+      }
+    }, pollInterval);
+  } catch {
+    showToast({
+      type: "error",
+      title: "Generation failed",
+      description: "Try again later.",
+    });
+  }
+
+  setIsLoading(false);
+};
 
 
 

@@ -72,6 +72,7 @@ import { orchestratorHandler } from "@/app/api/agents/orchestrator/handler";
 import { UserModel } from "@/app/models/user";
 import * as Sentry from "@sentry/nextjs";
 import { connectDB } from "@/app/api/utils/db";
+import { auth } from "@clerk/nextjs/server";
 
 
 export async function POST(req: NextRequest) {
@@ -80,14 +81,19 @@ export async function POST(req: NextRequest) {
   
       await connectDB();
       const body = await req.json();
-      const { userId, keyword, crawlUrl } = body;
+      const {  keyword, crawlUrl } = body;
 
-      if (!userId || !keyword) {
-        return NextResponse.json(
-          { error: "Missing userId or keyword" },
-          { status: 400 }
-        );
-      }
+      // if (!userId || !keyword) {
+      //   return NextResponse.json(
+      //     { error: "Missing userId or keyword" },
+      //     { status: 400 }
+      //   );
+      // }
+
+
+// inside POST
+const { userId } = await auth();
+if (!userId) throw new Error("Unauthorized");
 
       //  Fetch user safely
       const user = await UserModel.findOne({ userId });
