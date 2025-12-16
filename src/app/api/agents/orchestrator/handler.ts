@@ -436,6 +436,7 @@ export async function orchestratorHandler({
   }));
 
   console.log(` Active Plan: ${plan.name}`);
+const jobId = Date.now(); // simple, works
 
   //  Define cache keys
   const keys = {
@@ -445,7 +446,7 @@ export async function orchestratorHandler({
     hashtags: `agent:hashtags:${keyword}`,
     blueprint: `agent:blueprint:${keyword}`,
     seo: `agent:seo:${keyword}`,
-    blog: `agent:blog:${keyword}`,
+    blog: `agent:blog:${keyword}:${jobId}`,
     contentpreview: `agent:contentpreview:${keyword}`,
   };
 

@@ -126,7 +126,8 @@ const generateBlog = async () => {
       attempts++;
 
       try {
-        const res = await fetch("/api/blogs/latest");
+        const res = await fetch(`/api/blogs/by-keyword?keyword=${encodeURIComponent(keyword)}`);
+
 
         if (!res.ok) {
           clearInterval(poll);
@@ -135,7 +136,8 @@ const generateBlog = async () => {
 
         const blog = await res.json();
 
-        if (blog?.blogAgent?.blog) {
+        if (blog?.blogAgent?.blog &&
+  blog.keywordAgent?.keyword === keyword) {
           setBlogData({
             keyword: blog.keywordAgent.keyword,
             seo: blog.seoAgent,
