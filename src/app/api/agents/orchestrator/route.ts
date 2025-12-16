@@ -81,13 +81,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           queued: true,
           jobId: job.messageId,
+          status: "Orchestrator job queued successfully",
         });
       } catch (err) {
         Sentry.captureException(err);
         const message = err instanceof Error ? err.message : String(err);
 
         return NextResponse.json(
-          { error: message || "Internal server error" },
+          { error: message || "Internal server error",
+
+           },
+          
           { status: 500 }
         );
       }

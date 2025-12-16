@@ -71,12 +71,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { orchestratorHandler } from "@/app/api/agents/orchestrator/handler";
 import { UserModel } from "@/app/models/user";
 import * as Sentry from "@sentry/nextjs";
+import { connectDB } from "@/app/api/utils/db";
 
 
 export async function POST(req: NextRequest) {
   return Sentry.startSpan({ name: "worker.orchestrator" }, async () => {
     try {
   
+      await connectDB();
       const body = await req.json();
       const { userId, keyword, crawlUrl } = body;
 
