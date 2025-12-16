@@ -71,14 +71,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { orchestratorHandler } from "@/app/api/agents/orchestrator/handler";
 import { UserModel } from "@/app/models/user";
 import * as Sentry from "@sentry/nextjs";
-import { connectDB } from "@/app/api/utils/db";
+
 
 export async function POST(req: NextRequest) {
   return Sentry.startSpan({ name: "worker.orchestrator" }, async () => {
     try {
-      // 🔥 MUST await DB
-      await connectDB();
-
+  
       const body = await req.json();
       const { userId, keyword, crawlUrl } = body;
 
@@ -89,14 +87,14 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // 🔥 Fetch user safely
+      //  Fetch user safely
       const user = await UserModel.findOne({ userId });
 
       if (!user) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
 
-      // 🔥 Credit enforcement
+      //  Credit enforcement
       if (user.plan === "Free") {
         if (user.credits <= 0) {
           return NextResponse.json(
@@ -109,7 +107,7 @@ export async function POST(req: NextRequest) {
         await user.save();
       }
 
-      // 🔥 Run orchestrator (FAIL HARD if it fails)
+      //  Run orchestrator (FAIL HARD if it fails)
       await orchestratorHandler({ userId, keyword, crawlUrl });
 
       return NextResponse.json({ success: true });

@@ -27,8 +27,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { Client } from "@upstash/qstash";
 import * as Sentry from "@sentry/nextjs";
-import { BlogModel } from "@/app/models/blog";
-import { connectDB } from "@/app/api/utils/db";
+
 
 const client = new Client({ token: process.env.QSTASH_TOKEN! });
 
