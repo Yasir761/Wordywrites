@@ -77,63 +77,27 @@ export default function BlogGenerator() {
     setStep("choose-topic");
   };
 
-  // const generateBlog = async () => {
-  //   if (!subject) return;
-  //   setIsLoading(true);
-  //   try {
-  //     const res = await fetch(`/api/agents/orchestrator`, {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ keyword, subject, tone }),
-  //     });
-  //     const data = await res.json();
-  //     setBlogData(data);
-  //     setStep("generate");
-  //     showToast({ type: "success", title: "Blog generated", description: "You can now edit and publish it." });
-  //   } catch {
-  //     showToast({ type: "error", title: "Generation failed", description: "Try again later." });
-  //   }
-  //   setIsLoading(false);
-  // };
-
-
-
   const generateBlog = async () => {
-  if (!subject) return;
-  setIsLoading(true);
-
-  try {
-    const res = await fetch(`/api/agents/orchestrator`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ keyword, subject, tone }),
-    });
-
-    if (!res.ok) {
-      throw new Error("Failed to queue blog generation");
+    if (!subject) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/agents/orchestrator`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keyword, subject, tone }),
+      });
+      const data = await res.json();
+      setBlogData(data);
+      setStep("generate");
+      showToast({ type: "success", title: "Blog generated", description: "You can now edit and publish it." });
+    } catch {
+      showToast({ type: "error", title: "Generation failed", description: "Try again later." });
     }
-
-    // ❌ REMOVED: setBlogData(data)
-    // ❌ REMOVED: setStep("generate")
-
-    showToast({
-      type: "success",
-      title: "Blog generation started",
-      description: "Your blog is being generated. Redirecting…",
-    });
-
-    // ✅ Redirect to blogs list (or wherever you show saved blogs)
-    router.push("/dashboard/blogs");
-  } catch {
-    showToast({
-      type: "error",
-      title: "Generation failed",
-      description: "Try again later.",
-    });
-  } finally {
     setIsLoading(false);
-  }
-};
+  };
+
+
+
 
   return (
     <LocalErrorBoundary>
