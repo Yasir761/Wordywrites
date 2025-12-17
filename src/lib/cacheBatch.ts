@@ -5,12 +5,29 @@ import { NextResponse } from "next/server";
  * Batch Redis MGET - fetch multiple cached agents at once.
  * @param keys string[] - cache keys
  */
-export async function batchGet(keys: string[]) {
-  if (!keys.length) return [];
-  const results = await redis.mget(...keys);
-  return results.map((res:any) => (res ? JSON.parse(res) : null));
-}
 
+
+export async function batchGet(keys: string[]) {
+  const res = await redis.mget(...keys);
+
+  return res.map((item) => {
+    if (!item) return null;
+
+    // ✅ If already an object, return as-is
+    if (typeof item === "object") return item;
+
+    // ✅ Only parse strings
+    if (typeof item === "string") {
+      try {
+        return JSON.parse(item);
+      } catch {
+        return item;
+      }
+    }
+
+    return item;
+  });
+}
 /**
  * Batch Redis pipeline SETs - store multiple agent results in one go.
  * @param entries Array<[key, value, ttl]>

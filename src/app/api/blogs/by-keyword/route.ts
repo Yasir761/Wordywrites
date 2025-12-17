@@ -1,4 +1,4 @@
-// /api/blogs/by-keyword/route.ts
+
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { BlogModel } from "@/app/models/blog";

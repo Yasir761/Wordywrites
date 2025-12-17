@@ -77,24 +77,7 @@ export default function BlogGenerator() {
     setStep("choose-topic");
   };
 
-  // const generateBlog = async () => {
-  //   if (!subject) return;
-  //   setIsLoading(true);
-  //   try {
-  //     const res = await fetch(`/api/agents/orchestrator`, {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ keyword, subject, tone, userId: "" }),
-  //     });
-  //     const data = await res.json();
-  //     setBlogData(data);
-  //     setStep("generate");
-  //     showToast({ type: "success", title: "Blog generated", description: "You can now edit and publish it." });
-  //   } catch {
-  //     showToast({ type: "error", title: "Generation failed", description: "Try again later." });
-  //   }
-  //   setIsLoading(false);
-  // };
+ 
 
 const generateBlog = async () => {
   if (!subject) return;

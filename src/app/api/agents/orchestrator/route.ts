@@ -1,165 +1,87 @@
 
-// import { NextRequest, NextResponse } from "next/server";
-// import { auth } from "@clerk/nextjs/server";
-// import { Client } from "@upstash/qstash";
-
-// const client = new Client({ token: process.env.QSTASH_TOKEN! });
-
-// export async function POST(req: NextRequest) {
-//   const { userId } = await auth();
-//   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-//   const { keyword, crawlUrl } = await req.json();
-
-//   const result = await client.publishJSON({
-//     url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/workers/orchestrator`,
-//     body: { userId, keyword, crawlUrl },
-//     retries: 1,
-//   });
-
-//   console.log(" Orchestrator job queued:", result.messageId);
-//   return NextResponse.json({ queued: true, jobId: result.messageId });
-// }
-
-
-
 import { NextRequest, NextResponse } from "next/server";
+import { orchestratorHandler } from "./handler";
 import { auth } from "@clerk/nextjs/server";
-import { Client } from "@upstash/qstash";
+import { UserModel } from "@/app/models/user";
+import { connectDB } from "../../utils/db";
 import * as Sentry from "@sentry/nextjs";
 
 
-const client = new Client({ token: process.env.QSTASH_TOKEN! });
-
 export async function POST(req: NextRequest) {
   return await Sentry.startSpan(
-    { name: "Orchestrator Trigger API", op: "api.post" },
+    { name: "Orchestrator API", op: "api.post" },
     async () => {
       try {
         const { userId } = await auth();
 
-        if (userId) Sentry.setUser({ id: userId });
-        Sentry.setTag("queue", "qstash");
-        Sentry.addBreadcrumb({
-          category: "auth",
-          message: "User authenticated for Orchestrator queue",
-          level: "info",
-          data: { userId },
-        });
-
         if (!userId) {
-          Sentry.captureMessage("Unauthorized orchestrator request", {
-            level: "warning",
-          });
+          return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        Sentry.setUser({ id: userId });
+
+        await connectDB();
+
+        let body;
+        try {
+          body = await req.json();
+        } catch {
           return NextResponse.json(
-            { error: "Unauthorized" },
-            { status: 401 }
+            { error: "Invalid JSON body" },
+            { status: 400 }
           );
         }
 
-        const { keyword, crawlUrl } = await req.json();
+        const { keyword, crawlUrl } = body;
+
+        if (!keyword) {
+          return NextResponse.json(
+            { error: "Missing keyword" },
+            { status: 400 }
+          );
+        }
+
+        const user = await UserModel.findOne({ userId });
+        if (!user) {
+          return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
+
+        if (user.plan === "Free") {
+          if (user.credits <= 0) {
+            return NextResponse.json(
+              { error: "You are out of free credits. Upgrade to continue." },
+              { status: 402 }
+            );
+          }
+          user.credits -= 1;
+          await user.save();
+        }
+
+        const result = await orchestratorHandler({ userId, keyword, crawlUrl });
+
+        if (!result || typeof result !== "object" || !("blogId" in result)) {
+          throw new Error("Orchestrator returned invalid result");
+        }
+
         Sentry.addBreadcrumb({
           category: "orchestrator",
-          message: "Queue job payload received",
+          message: "Orchestrator completed successfully",
           level: "info",
-          data: { keyword, hasCrawlUrl: !!crawlUrl },
+          data: { keyword, blogId: result.blogId },
         });
 
-        const job = await client.publishJSON({
-          url: `${process.env.APP_URL}/api/workers/orchestrator`,
-          body: { userId, keyword, crawlUrl },
-          retries: 1,
-        });
-
-        Sentry.addBreadcrumb({
-          category: "qstash",
-          message: "QStash job queued",
-          level: "info",
-          data: { messageId: job.messageId },
-        });
-
-        return NextResponse.json({
-          queued: true,
-          jobId: job.messageId,
-          status: "Orchestrator job queued successfully",
-        });
+        return NextResponse.json(
+          JSON.parse(JSON.stringify(result))
+        );
       } catch (err) {
         Sentry.captureException(err);
         const message = err instanceof Error ? err.message : String(err);
 
         return NextResponse.json(
-          { error: message || "Internal server error",
-
-           },
-          
+          { error: message || "Internal server error" },
           { status: 500 }
         );
       }
     }
   );
 }
-
-
-
-
-
-
-
-// import { NextRequest, NextResponse } from "next/server";
-// import { auth } from "@clerk/nextjs/server";
-// import { Client } from "@upstash/qstash";
-// import * as Sentry from "@sentry/nextjs";
-
-// const client = new Client({ token: process.env.QSTASH_TOKEN! });
-
-// export async function POST(req: NextRequest) {
-//   return Sentry.startSpan(
-//     { name: "Orchestrator Trigger API", op: "api.post" },
-//     async () => {
-//       try {
-//         const { userId } = await auth();
-
-//         if (!userId) {
-//           return NextResponse.json(
-//             { error: "Unauthorized" },
-//             { status: 401 }
-//           );
-//         }
-
-//         Sentry.setUser({ id: userId });
-//         Sentry.setTag("queue", "qstash");
-
-//         const { keyword, crawlUrl } = await req.json();
-
-//         if (!keyword) {
-//           return NextResponse.json(
-//             { error: "Missing keyword" },
-//             { status: 400 }
-//           );
-//         }
-
-//         if (!process.env.APP_URL) {
-//           throw new Error("APP_URL is not set");
-//         }
-
-//         const job = await client.publishJSON({
-//           url: `${process.env.APP_URL}/api/workers/orchestrator`,
-//           body: { userId, keyword, crawlUrl },
-//           retries: 1,
-//         });
-
-//         return NextResponse.json({
-//           queued: true,
-//           jobId: job.messageId,
-//         });
-//       } catch (err: any) {
-//         Sentry.captureException(err);
-
-//         return NextResponse.json(
-//           { error: err?.message || "Internal server error" },
-//           { status: 500 }
-//         );
-//       }
-//     }
-//   );
-// }
