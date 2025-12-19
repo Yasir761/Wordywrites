@@ -49,6 +49,8 @@ export default function BlogGenerator() {
   const [userPlan, setUserPlan] = useState<string | null>(null);
   const [suggestedTopics, setSuggestedTopics] = useState<Array<string | { title: string; reason?: string }>>([]);
   const [step, setStep] = useState<"input" | "choose-topic" | "generate">("input");
+const [isStreaming, setIsStreaming] = useState(false);
+const [streamedBlog, setStreamedBlog] = useState("");
 
   const router = useRouter();
 
@@ -79,87 +81,196 @@ export default function BlogGenerator() {
 
  
 
+// const generateBlog = async () => {
+//   if (!subject) return;
+//   setIsLoading(true);
+
+//   try {
+//     const res = await fetch(`/api/agents/orchestrator`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ keyword, subject, tone }),
+//     });
+
+//     await res.json();
+
+//     showToast({
+//       type: "success",
+//       title: "Generation started",
+//       description: "Your blog is being generated.",
+//     });
+
+//     setStep("generate");
+
+//     // ✅ START POLLING ONLY AFTER GENERATION
+//     const pollInterval = 3000;
+//     const maxAttempts = 12;
+//     let attempts = 0;
+
+//     const poll = setInterval(async () => {
+//       attempts++;
+
+//       try {
+//         const res = await fetch(`/api/blogs/by-keyword?keyword=${encodeURIComponent(keyword)}`);
+
+
+//         if (!res.ok) {
+//           clearInterval(poll);
+//           return;
+//         }
+
+//         const blog = await res.json();
+
+//         if (blog?.blogAgent?.blog &&
+//   blog.keywordAgent?.keyword === keyword) {
+//           setBlogData({
+//             keyword: blog.keywordAgent.keyword,
+//             seo: blog.seoAgent,
+//             blog: blog.blogAgent.blog,
+//             contentpreview: blog.ContentPreviewAgent,
+//           });
+
+//           clearInterval(poll);
+
+//           showToast({
+//             type: "success",
+//             title: "Blog ready",
+//             description: "Your blog has been generated successfully.",
+//           });
+//         }
+
+//         if (attempts >= maxAttempts) {
+//           clearInterval(poll);
+//           showToast({
+//             type: "warning",
+//             title: "Still generating…",
+//             description: "Please refresh shortly.",
+//           });
+//         }
+//       } catch {
+//         clearInterval(poll);
+//       }
+//     }, pollInterval);
+//   } catch {
+//     showToast({
+//       type: "error",
+//       title: "Generation failed",
+//       description: "Try again later.",
+//     });
+//   }
+
+//   setIsLoading(false);
+// };
+
+
+
+
+
+
+
 const generateBlog = async () => {
   if (!subject) return;
+
   setIsLoading(true);
+  setStreamedBlog("");
+  setBlogData(null);
 
   try {
-    const res = await fetch(`/api/agents/orchestrator`, {
+    // 1️⃣ Run orchestrator FIRST (fast)
+    const orchestratorRes = await fetch(`/api/agents/orchestrator`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ keyword, subject, tone }),
     });
 
-    await res.json();
+    const orchestratorData = await orchestratorRes.json();
 
-    showToast({
-      type: "success",
-      title: "Generation started",
-      description: "Your blog is being generated.",
-    });
+    if (!orchestratorRes.ok) {
+      throw new Error(orchestratorData?.error || "Orchestrator failed");
+    }
 
     setStep("generate");
 
-    // ✅ START POLLING ONLY AFTER GENERATION
-    const pollInterval = 3000;
-    const maxAttempts = 12;
-    let attempts = 0;
+    // Pre-fill SEO + metadata immediately
+    setBlogData({
+      keyword,
+      seo: orchestratorData.seo,
+      blog: "",
+      contentpreview: orchestratorData.contentpreview,
+    });
 
-    const poll = setInterval(async () => {
-      attempts++;
+    // 2️⃣ START STREAMING BLOG
+    setIsLoading(false);
+    setIsStreaming(true);
 
-      try {
-        const res = await fetch(`/api/blogs/by-keyword?keyword=${encodeURIComponent(keyword)}`);
+    const streamRes = await fetch("/api/agents/blog/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        blogId: orchestratorData.blogId,
+        keyword,
+        outline: orchestratorData.blueprint?.outline,
+        tone,
+        seo: orchestratorData.seo,
+      }),
+    });
 
+    if (!streamRes.body) {
+      throw new Error("No stream received");
+    }
 
-        if (!res.ok) {
-          clearInterval(poll);
-          return;
-        }
+    const reader = streamRes.body.getReader();
+    const decoder = new TextDecoder();
 
-        const blog = await res.json();
+    let fullText = "";
 
-        if (blog?.blogAgent?.blog &&
-  blog.keywordAgent?.keyword === keyword) {
-          setBlogData({
-            keyword: blog.keywordAgent.keyword,
-            seo: blog.seoAgent,
-            blog: blog.blogAgent.blog,
-            contentpreview: blog.ContentPreviewAgent,
-          });
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
 
-          clearInterval(poll);
+      const chunk = decoder.decode(value);
+      fullText += chunk;
 
-          showToast({
-            type: "success",
-            title: "Blog ready",
-            description: "Your blog has been generated successfully.",
-          });
-        }
+      setStreamedBlog(fullText);
+      // setBlogData((prev) =>
+      //   prev ? { ...prev, blog: fullText } : prev
+      // );
+    }
 
-        if (attempts >= maxAttempts) {
-          clearInterval(poll);
-          showToast({
-            type: "warning",
-            title: "Still generating…",
-            description: "Please refresh shortly.",
-          });
-        }
-      } catch {
-        clearInterval(poll);
-      }
-    }, pollInterval);
-  } catch {
+    setIsStreaming(false);
+    setBlogData(prev =>
+  prev ? { ...prev, blog: fullText } : prev
+);
+
+    //  SAVE FINAL BLOG (IMPORTANT)
+    // await fetch("/api/agents/blog", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({
+    //     keyword,
+    //     outline: orchestratorData.blueprint?.outline,
+    //     tone,
+    //     seo: orchestratorData.seo,
+    //     regenerate: true,
+    //   }),
+    // });
+
+    showToast({
+      type: "success",
+      title: "Blog ready",
+      description: "Your blog has been generated successfully.",
+    });
+  } catch (err) {
+    setIsStreaming(false);
+    setIsLoading(false);
+
     showToast({
       type: "error",
       title: "Generation failed",
-      description: "Try again later.",
+      description: "Please try again.",
     });
   }
-
-  setIsLoading(false);
 };
-
 
 
 
@@ -167,7 +278,7 @@ const generateBlog = async () => {
     <LocalErrorBoundary>
       <div className="min-h-screen bg-background dark:bg-background text-foreground relative">
         <div className="max-w-4xl mx-auto py-20 px-4 space-y-14">
-          {isLoading && <Loader />}
+          {isLoading && !isStreaming && <Loader />}
 
           {/* STEP 1 — INPUT */}
           {!isLoading && !blogData && step === "input" && (
@@ -302,7 +413,12 @@ const generateBlog = async () => {
               <div className="gen-card p-10">
                 <h3 className="gen-label text-indigo-600 mb-6">Blog Content Editor</h3>
                 {isClient ? (
-                  <BlogEditor content={blogData.blog ?? ""} onSave={() => {}} />
+                  // <BlogEditor content={blogData.blog ?? ""} onSave={() => {}} />
+                  <BlogEditor
+  key={blogData.blog?.length || 0}
+  content={blogData.blog ?? ""}
+  onSave={() => {}}
+/>
                 ) : (
                   <p className="text-sm text-muted-foreground">Loading editor…</p>
                 )}
