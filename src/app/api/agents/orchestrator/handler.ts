@@ -16,7 +16,7 @@ const AGENT_ENDPOINTS = {
   hashtags: "/api/agents/hashtags",
   seo: "/api/agents/seo-optimizer",
   blog: "/api/agents/blog",
-  contentpreview: "/api/agents/contentpreview",
+  // contentpreview: "/api/agents/contentpreview",
 };
 
 function getBaseUrl() {
@@ -43,6 +43,7 @@ export async function orchestratorHandler({
   //  Handle missing user (for local or Postman testing)
   if (!userId) {
     if (process.env.NODE_ENV === "development") {
+      
       console.warn(" No userId provided — using fallback dev_user_1234");
       userId = "dev_user_1234";
     } else {
@@ -90,7 +91,7 @@ const jobId = Date.now(); // simple, works
     blueprint: `agent:blueprint:${keyword}`,
     seo: `agent:seo:${keyword}`,
     blog: `agent:blog:${keyword}:${jobId}`,
-    contentpreview: `agent:contentpreview:${keyword}`,
+    // contentpreview: `agent:contentpreview:${keyword}`,
   };
 
   //  Prefetch Redis cache
@@ -101,6 +102,20 @@ const jobId = Date.now(); // simple, works
   const cacheStatus: Record<string, string> = {};
   const ttl = 60 * 60 * 24; // 24 hours
 
+
+
+  class AgentError extends Error {
+  agent: string;
+  status: number;
+  payload: any;
+
+  constructor(agent: string, status: number, payload: any) {
+    super(`Agent ${agent} failed with status ${status}`);
+    this.agent = agent;
+    this.status = status;
+    this.payload = payload;
+  }
+}
   //  Agent call helper
   const callAgent = async (agent: keyof typeof AGENT_ENDPOINTS, body: any) => {
     if (!plan.aiAgents.includes(agent))
@@ -118,6 +133,29 @@ const jobId = Date.now(); // simple, works
     console.log(` ${agent} generated in ${(performance.now() - start).toFixed(1)}ms`);
     return json;
   };
+
+
+
+//   const res = await fetch(`${baseUrl}${AGENT_ENDPOINTS[agent]}`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify(body),
+//   });
+
+//   const text = await res.text();
+
+//   if (!res.ok) {
+//     throw new Error(
+//       `Agent ${agent} failed (${res.status}): ${text.slice(0, 120)}`
+//     );
+//   }
+
+//   try {
+//     return JSON.parse(text);
+//   } catch {
+//     throw new Error(`Agent ${agent} returned non-JSON response`);
+//   }
+// };
 
   //  Cache retrieval or regeneration
   async function getOrGenerate(
@@ -163,17 +201,22 @@ const seo = await getOrGenerate(5, "seo", {
   const finalOutline =
     blueprint?.outline || (Array.isArray(keywordData?.outline) ? keywordData.outline : []);
 
-  const blog = await getOrGenerate(6, "blog", {
-    keyword,
-    outline: finalOutline,
-    tone: tone.tone,
-    seo,
-  });
+  // const blog = await getOrGenerate(6, "blog", {
+  //   keyword,
+  //   outline: finalOutline,
+  //   tone: tone.tone,
+  //   seo,
+  // });
 
-  const preview = await getOrGenerate(7, "contentpreview", {
-    title: seo.optimized_title || keyword,
-    content: blog.blog || "",
-  });
+  // Do NOT generate blog text here
+const blog = {
+  keyword,
+  blog: "", // filled by stream
+};
+  // const preview = await getOrGenerate(7, "contentpreview", {
+  //   title: seo.optimized_title || keyword,
+  //   content: blog.blog || "",
+  // });
 
   const crawl = crawlUrl ? await callAgent("crawl", { url: crawlUrl }) : null;
 
@@ -187,7 +230,7 @@ const seo = await getOrGenerate(5, "seo", {
     blueprint,
     seo,
     blog,
-    contentpreview: preview,
+    // contentpreview: preview,
   };
 
   Object.keys(keys).forEach((agent, i) => {
@@ -201,20 +244,30 @@ const seo = await getOrGenerate(5, "seo", {
   console.timeEnd(" REDIS_PIPELINE_SET");
 
   //  Save results to DB
-  const blogDoc = await BlogModel.create({
-    userId,
-    keywordAgent: { keyword, intent: keywordData.intent },
-    toneAgent: tone,
-    blueprintAgent: blueprint,
-    seoAgent: seo,
-    blogAgent: blog,
-    analyzeAgent: analyze,
-    crawlAgent: crawl,
-    ContentPreviewAgent: preview,
-    status: "draft",
-    createdAt: new Date(),
-  });
-
+  // const blogDoc = await BlogModel.create({
+  //   userId,
+  //   keywordAgent: { keyword, intent: keywordData.intent },
+  //   toneAgent: tone,
+  //   blueprintAgent: blueprint,
+  //   seoAgent: seo,
+  //   blogAgent: blog,
+  //   analyzeAgent: analyze,
+  //   crawlAgent: crawl,
+  //   // ContentPreviewAgent: preview,
+  //   status: "draft",
+  //   createdAt: new Date(),
+  // });
+const blogDoc = await BlogModel.create({
+  userId,
+  keywordAgent: { keyword, intent: keywordData.intent },
+  toneAgent: tone,
+  blueprintAgent: blueprint,
+  seoAgent: seo,
+  blogAgent: { blog: "" }, // streamed later
+  analyzeAgent: analyze,
+  crawlAgent: crawl,
+  status: "streaming",
+});
   //  Cache summary
   console.log("\n CACHE STATUS SUMMARY:");
   Object.entries(cacheStatus).forEach(([agent, status]) =>
@@ -227,16 +280,28 @@ const seo = await getOrGenerate(5, "seo", {
 
 
 
+  // return {
+  //   keyword,
+  //   seo,
+  //   blog: blog.blog || "",
+  //   // contentpreview: preview,
+  //   tone,
+  //   hashtags: tagsData.tags || tagsData,
+  //   analyze,
+  //   blueprint,
+  //   blogId: blogDoc._id.toString(),
+  // };
+
+
+
   return {
-    keyword,
-    seo,
-    blog: blog.blog || "",
-    contentpreview: preview,
-    tone,
-    hashtags: tagsData.tags || tagsData,
-    analyze,
-    blueprint,
-    blogId: blogDoc._id.toString(),
-  };
+  blogId: blogDoc._id.toString(),
+  keyword,
+  seo,
+  tone,
+  hashtags: tagsData.tags || tagsData,
+  analyze,
+  blueprint,
+};
 }
  
