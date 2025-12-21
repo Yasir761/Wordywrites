@@ -1,20 +1,19 @@
 
+import { NextRequest, NextResponse } from "next/server";
+import Parser from "rss-parser";
+import * as cheerio from "cheerio";
+import { CrawlEnhanceSchema } from "./schema";
+import { createEnhancementPrompt } from "./prompt";
+import { isWithinTokenLimit, splitTextByTokenLimit } from "@/app/api/utils/tokenUtils";
+import { connectDB } from "@/app/api/utils/db";
+import { CrawledBlogModel } from "@/app/models/crawledBlog";
+import * as Sentry from "@sentry/nextjs";
 
-// import { NextRequest, NextResponse } from "next/server";
-// import Parser from "rss-parser";
-// import * as cheerio from "cheerio";
-// import { CrawlEnhanceSchema } from "./schema";
-// import { createEnhancementPrompt } from "./prompt";
-// import { isWithinTokenLimit, splitTextByTokenLimit } from "@/app/api/utils/tokenUtils";
-// import { connectDB } from "@/app/api/utils/db";
-// import { CrawledBlogModel } from "@/app/models/crawledBlog";
-// import { string } from "zod";
+const parser = new Parser();
+const MAX_TOKENS = 4000;
+const MAX_CONTENT_TOKENS = 2500; // Reserve tokens for system prompt and other content
 
-// const parser = new Parser();
-// const MAX_TOKENS = 4000;
-// const MAX_CONTENT_TOKENS = 2500; // Reserve tokens for system prompt and other content
 
-// // Function to detect if URL is RSS feed or direct article
 // function isRSSFeed(url: string) {
 //   const rssIndicators = [
 //     '/rss',
@@ -30,8 +29,8 @@
 //   return rssIndicators.some(indicator => lowerUrl.includes(indicator));
 // }
 
-// // Function to convert article URL to RSS feed URL
-// function tryConvertToRSSUrl(url: string) {
+// Function to convert article URL to RSS feed URL
+// function tryConvertTourl(url: string) {
 //   const lowerUrl = url.toLowerCase();
   
 //   // Medium user feeds
@@ -66,647 +65,6 @@
   
 //   return null;
 // }
-
-// // Function to intelligently truncate content while preserving structure
-// function intelligentContentTruncation(content: string, maxTokens: number) {
-//   // First, try to fit within token limit
-//   if (isWithinTokenLimit(content, maxTokens)) {
-//     return content;
-//   }
-  
-//   console.log(` Content too long, truncating from ${content.length} chars`);
-  
-//   // Split into paragraphs and prioritize
-//   const paragraphs = content.split('\n\n').filter(p => p.trim().length > 0);
-  
-//   let truncatedContent = '';
-//   let currentTokens = 0;
-  
-//   // Always include first few paragraphs (usually intro)
-//   for (let i = 0; i < Math.min(3, paragraphs.length); i++) {
-//     const testContent = truncatedContent + (truncatedContent ? '\n\n' : '') + paragraphs[i];
-//     if (isWithinTokenLimit(testContent, maxTokens)) {
-//       truncatedContent = testContent;
-//       currentTokens++;
-//     } else {
-//       break;
-//     }
-//   }
-  
-//   // Add middle content if space available
-//   const midStart = Math.floor(paragraphs.length / 3);
-//   const midEnd = Math.floor(2 * paragraphs.length / 3);
-  
-//   for (let i = midStart; i < midEnd && i < paragraphs.length; i++) {
-//     const testContent = truncatedContent + '\n\n' + paragraphs[i];
-//     if (isWithinTokenLimit(testContent, maxTokens)) {
-//       truncatedContent = testContent;
-//     } else {
-//       break;
-//     }
-//   }
-  
-//   // Try to add conclusion paragraphs
-//   const lastParagraphs = paragraphs.slice(-2);
-//   for (const para of lastParagraphs) {
-//     const testContent = truncatedContent + '\n\n' + para;
-//     if (isWithinTokenLimit(testContent, maxTokens)) {
-//       truncatedContent = testContent;
-//     } else {
-//       break;
-//     }
-//   }
-  
-//   // If still too long, do character-based truncation
-//   if (!isWithinTokenLimit(truncatedContent, maxTokens)) {
-//     const chunks = splitTextByTokenLimit(truncatedContent, maxTokens);
-//     truncatedContent = chunks[0];
-//   }
-  
-//   console.log(` Content truncated to ${truncatedContent.length} chars`);
-//   return truncatedContent + '\n\n[Content truncated for processing...]';
-// }
-
-// // Function to safely fetch and parse HTML content
-// async function fetchArticleContent(url:string) {
-//   console.log(" Fetching article content from:", url);
-  
-//   const controller = new AbortController();
-//   const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-//   const response = await fetch(url, {
-//     headers: {
-//       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-//       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-//     },
-//     signal: controller.signal
-//   });
-
-//   clearTimeout(timeoutId);
-
-//   if (!response.ok) {
-//     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-//   }
-
-//   const html = await response.text();
-//   console.log(" HTML fetched, length:", html.length);
-
-//   // Clean HTML aggressively
-//   const cleanedHtml = html
-//     .replace(/<!--[\s\S]*?-->/g, '') // Remove comments
-//     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove scripts
-//     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // Remove styles
-//     .replace(/<[^>]*@[^>]*>/g, '') // Remove tags with @ symbols
-//     .replace(/<([^>\s]*[^a-zA-Z0-9\-_\/\s][^>]*)>/g, ''); // Remove malformed tags
-
-//   const $ = cheerio.load(cleanedHtml, {
-//     xmlMode: false
-//   });
-
-//   // Extract title
-//   let title = $('h1').first().text().trim() ||
-//               $('title').text().trim() ||
-//               $('[property="og:title"]').attr('content') ||
-//               $('meta[name="title"]').attr('content') ||
-//               '';
-
-//   // Clean title
-//   title = title.replace(/\s+/g, ' ').trim();
-
-//   // Extract content using multiple strategies
-//   let content = '';
-//   const contentSelectors = [
-//     'article',
-//     '[role="main"]',
-//     '.post-content',
-//     '.entry-content',
-//     '.content',
-//     '.post-body',
-//     '.article-content',
-//     'main',
-//     '#content'
-//   ];
-
-//   for (const selector of contentSelectors) {
-//     const elements = $(selector);
-//     if (elements.length > 0) {
-//       content = elements.find('p, div, h1, h2, h3, h4, h5, h6').map((_, el) => {
-//         const text = $(el).text().trim();
-//         return text.length > 30 ? text : '';
-//       }).get().filter(text => text.length > 0).join('\n\n');
-      
-//       if (content.length > 300) {
-//         break;
-//       }
-//     }
-//   }
-
-//   // Fallback: get all paragraphs
-//   if (!content || content.length < 300) {
-//     content = $('p').map((_, el) => {
-//       const text = $(el).text().trim();
-//       return text.length > 30 ? text : '';
-//     }).get().filter(text => text.length > 0).join('\n\n');
-//   }
-
-//   // Extract meta description
-//   const meta = $("meta[name='description']").attr("content") || 
-//                $("meta[property='og:description']").attr("content") || 
-//                "";
-
-//   return { title, content, meta };
-// }
-
-// // Enhanced AI processing with chunking support
-// async function processContentWithAI(
-//   content: string,
-//   title: string,
-//   meta: string,
-//   agents: { intent: any; toneVoice: any; seo: any }
-// ) {
-//   // Truncate content if needed
-//   const processableContent = intelligentContentTruncation(content, MAX_CONTENT_TOKENS);
-  
-//   const enhancedPrompt = `
-// You are an expert blog editor. Improve the following blog post:
-
-// Title: ${title}
-// Meta: ${meta}
-// Tone: ${agents.toneVoice?.tone || "informative"}
-// Voice: ${agents.toneVoice?.voice || "neutral"}
-// Intent: ${agents.intent?.intent || "Informational"}
-// SEO: ${agents.seo?.optimized_title || ""}, ${agents.seo?.meta_description || ""}
-
-// Content:
-// ${processableContent}
-
-// Enhance by:
-// - Keep original meaning and key points
-// - Improve tone, grammar, flow
-// - Use Markdown headers (##, ###)
-// - Boost SEO where possible
-// - Maintain or expand content quality
-// - Add conclusion if missing
-// - Preserve technical accuracy
-
-// Return only the enhanced blog content in Markdown format.
-//   `.trim();
-
-//   console.log(` Enhancement prompt length: ${enhancedPrompt.length} chars`);
-
-//   // Double-check token limit
-//   if (!isWithinTokenLimit(enhancedPrompt, MAX_TOKENS)) {
-//     throw new Error("Content still too large after truncation");
-//   }
-
-//   // Call OpenAI API
-//   const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-//     method: "POST",
-//     headers: {
-//       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-//       "Content-Type": "application/json",
-//     },
-//     body: JSON.stringify({
-//       model: "gpt-4o-mini",
-//       messages: [
-//         { role: "system", content: "You are a precise and SEO-aware blog editor. Maintain the original content's technical accuracy and core message." },
-//         { role: "user", content: enhancedPrompt },
-//       ],
-//       temperature: 0.4,
-//       max_tokens: 3000, // Ensure response isn't too long
-//     }),
-//   });
-
-//   if (!aiRes.ok) {
-//     const errorText = await aiRes.text();
-//     console.error(" OpenAI API error:", errorText);
-//     throw new Error(`OpenAI API failed: ${aiRes.status}`);
-//   }
-
-//   const aiJson = await aiRes.json();
-//   const enhancedBlog = aiJson.choices?.[0]?.message?.content?.trim();
-  
-//   if (!enhancedBlog || enhancedBlog.length < 200) {
-//     throw new Error("Enhanced blog is too short or missing");
-//   }
-
-//   return enhancedBlog;
-// }
-
-// export async function POST(req: NextRequest) {
-//   try {
-//     console.log(" Starting crawl & enhance agent");
-//     const { rssUrl, manualContent, manualTitle } = await req.json();
-//     console.log(" Request data:", { rssUrl, manualTitle, hasManualContent: !!manualContent });
-
-//     await connectDB();
-
-//     let title = manualTitle || "";
-//     let content = manualContent || "";
-//     let meta = "";
-
-//     // --- MODE 1: URL Processing (RSS or Direct Article) ---
-//     if (rssUrl && /^https?:\/\/.+/.test(rssUrl)) {
-//       console.log(" Processing URL mode");
-      
-//       let isRSS = isRSSFeed(rssUrl);
-//       console.log(" Is RSS feed?", isRSS);
-      
-//       if (isRSS) {
-//         // Handle as RSS feed
-//         try {
-//           console.log(" Parsing RSS feed...");
-//           const feed = await parser.parseURL(rssUrl);
-//           console.log(" RSS parsed successfully, items found:", feed.items?.length || 0);
-          
-//           const firstItem = feed.items?.[0];
-//           if (!firstItem?.link || !firstItem?.title) {
-//             return NextResponse.json({ error: "No valid blog post found in RSS" }, { status: 404 });
-//           }
-
-//           title = firstItem.title;
-          
-//           // Try RSS content first
-//           if (firstItem.content && firstItem.content.length > 300) {
-//             const $ = cheerio.load(firstItem.content, { xmlMode: false});
-//             content = $.text().trim();
-//           } else if (firstItem.contentSnippet) {
-//             content = firstItem.contentSnippet;
-//           }
-          
-//           // If RSS content is insufficient, fetch from the article URL
-//           if (!content || content.length < 300) {
-//             const articleData = await fetchArticleContent(firstItem.link);
-//             content = articleData.content;
-//             meta = articleData.meta;
-//           }
-
-//         } catch (rssError) {
-//           console.error(
-//             " RSS parsing failed:",
-//             typeof rssError === "object" && rssError !== null && "message" in rssError
-//               ? (rssError as { message?: string }).message
-//               : String(rssError)
-//           );
-//           isRSS = false;
-//         }
-//       }
-      
-//       if (!isRSS) {
-//         // Handle as direct article URL
-//         console.log("Treating as direct article URL");
-//         try {
-//           const articleData = await fetchArticleContent(rssUrl);
-//           title = articleData.title;
-//           content = articleData.content;
-//           meta = articleData.meta;
-//         } catch (articleError) {
-//           console.error(
-//             " Direct article fetch failed:",
-//             typeof articleError === "object" && articleError !== null && "message" in articleError
-//               ? (articleError as { message?: string }).message
-//               : String(articleError)
-//           );
-//           return NextResponse.json({ 
-//             error: "Failed to fetch content from URL", 
-//             details: typeof articleError === "object" && articleError !== null && "message" in articleError
-//               ? (articleError as { message?: string }).message
-//               : String(articleError)
-//           }, { status: 422 });
-//         }
-//       }
-
-//       if (!content || content.length < 100) {
-//         return NextResponse.json({ 
-//           error: "Blog content too short or not found", 
-//           details: `Content length: ${content?.length || 0} characters`,
-//           url: rssUrl
-//         }, { status: 422 });
-//       }
-
-//       console.log(" Content extraction successful:", {
-//         titleLength: title.length,
-//         contentLength: content.length,
-//         metaLength: meta.length
-//       });
-//     }
-//     // --- MODE 2: Manual Input ---
-//     else if (manualContent && manualContent.trim().length > 100) {
-//       console.log(" Processing manual input mode");
-//       title = manualTitle || "Untitled Blog";
-//       content = manualContent;
-//       meta = "Enhanced blog generated from manual input";
-//     } else {
-//       return NextResponse.json(
-//         { error: "Provide either a valid URL (RSS feed or article) or sufficient manual content (min 100 chars)" },
-//         { status: 400 }
-//       );
-//     }
-
-//     // --- AI Agents (Intent, Tone, SEO) ---
-//     let intent = { intent: "Informational" };
-//     let toneVoice = { tone: "informative", voice: "neutral" };
-//     let seo = { optimized_title: title, meta_description: meta };
-    
-//     try {
-//       console.log(" Calling AI agents...");
-//       const agentResults = await Promise.allSettled([
-//         fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/agents/keyword`, {
-//           method: "POST",
-//           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify({ keyword: title }),
-//         }).then(res => res.ok ? res.json() : Promise.reject(res)),
-
-//         fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/agents/tone`, {
-//           method: "POST",
-//           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify({ keyword: title }),
-//         }).then(res => res.ok ? res.json() : Promise.reject(res)),
-
-//         fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/agents/seo-optimizer`, {
-//           method: "POST",
-//           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify({
-//             keyword: title,
-//             outline: [],
-//             tone: "informative",
-//             voice: "neutral",
-//             tags: [],
-//           }),
-//         }).then(res => res.ok ? res.json() : Promise.reject(res)),
-//       ]);
-
-//       if (agentResults[0].status === 'fulfilled') intent = agentResults[0].value;
-//       if (agentResults[1].status === 'fulfilled') toneVoice = agentResults[1].value;
-//       if (agentResults[2].status === 'fulfilled') seo = agentResults[2].value;
-      
-//       console.log(" AI agents completed");
-//     } catch (err) {
-//       console.log(" AI agents failed, using fallbacks");
-//     }
-
-//     // --- AI Enhancement with Content Management ---
-//     let enhancedBlog;
-//     try {
-//       console.log(" Processing content with AI...");
-//       enhancedBlog = await processContentWithAI(content, title, meta, {
-//         intent,
-//         toneVoice,
-//         seo
-//       });
-//       console.log(" AI enhancement completed");
-//     } catch (enhancementError) {
-//       console.error(
-//         " AI enhancement failed:",
-//         typeof enhancementError === "object" && enhancementError !== null && "message" in enhancementError
-//           ? (enhancementError as { message?: string }).message
-//           : String(enhancementError)
-//       );
-//       return NextResponse.json({ 
-//         error: "Failed to enhance content", 
-//         details: typeof enhancementError === "object" && enhancementError !== null && "message" in enhancementError
-//           ? (enhancementError as { message?: string }).message
-//           : String(enhancementError)
-//       }, { status: 500 });
-//     }
-
-//     // --- Simplified Comparison (skip if content was truncated) ---
-//     let comparison = {
-//       title_changed: false,
-//   meta_changed: false,
-//   tone_changed: false,
-//   word_count_diff: enhancedBlog.split(/\s+/).length - content.split(/\s+/).length,
-//   added_sections: [],
-//   removed_sections: [],
-//   keywords_added: [],
-//   seo_score_diff: 0,
-//   summary: "Initial enhancement comparison (fallback)."
-//     };
-
-//     // Only do detailed comparison for smaller content
-//     if (content.length < 5000) {
-//       try {
-//         const diffPrompt = `Compare the original and enhanced blog content and return a JSON object with the following structure:
-// {
-//   "title_changed": boolean,
-//   "meta_changed": boolean, 
-//   "tone_changed": boolean,
-//   "word_count_diff": number,
-//   "added_sections": array of strings,
-//   "removed_sections": array of strings,
-//   "keywords_added": array of strings,
-//   "seo_score_diff": number between 0 and 1,
-//   "summary": string
-// }
-
-// Original: ${content.substring(0, 1000)}...
-// Enhanced: ${enhancedBlog.substring(0, 1000)}...
-
-// Focus on concrete differences and improvements made.`;
-
-//         if (isWithinTokenLimit(diffPrompt, MAX_TOKENS)) {
-//           const compareRes = await fetch("https://api.openai.com/v1/chat/completions", {
-//             method: "POST",
-//             headers: {
-//               Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-//               "Content-Type": "application/json",
-//             },
-//             body: JSON.stringify({
-//               model: "gpt-4o-mini",
-//               messages: [
-//                 { role: "system", content: "You are a JSON analyzer that compares blog content changes. Return only valid JSON." },
-//                 { role: "user", content: diffPrompt },
-//               ],
-//               temperature: 0.1,
-//             }),
-//           });
-
-//           if (compareRes.ok) {
-//             const compareJson = await compareRes.json();
-//             const aiComparison = JSON.parse(compareJson.choices?.[0]?.message?.content || JSON.stringify(comparison));
-            
-//             // Calculate word counts for accurate diff
-//             const originalWordCount = content.split(/\s+/).length;
-//             const enhancedWordCount = enhancedBlog.split(/\s+/).length;
-
-//             // Merge AI analysis with our baseline comparison
-//             comparison = {
-//               ...comparison,
-//               ...aiComparison,
-//               word_count_diff: enhancedWordCount - originalWordCount // Keep our accurate count
-//             };
-
-//             if (!Array.isArray(comparison.keywords_added)) comparison.keywords_added = [];
-// if (typeof comparison.seo_score_diff !== "number") comparison.seo_score_diff = 0;
-// if (typeof comparison.summary !== "string") comparison.summary = "No summary generated.";
-//           }
-//         }
-//       } catch (comparisonError) {
-//         console.log(" Comparison failed, using fallback");
-//       }
-//     }
-
-//     // --- Validation with Debug Info ---
-//     const validationData = {
-//       original: {
-//         title,
-//         content: content.length > 10000 ? content.substring(0, 10000) + "..." : content,
-//         meta_description: meta,
-//         tone: toneVoice?.tone,
-//         voice: toneVoice?.voice,
-//         seo,
-//         intent: intent?.intent,
-//       },
-//       enhanced: {
-//         title: seo?.optimized_title || title,
-//         content: enhancedBlog,
-//         meta_description: seo?.meta_description || meta,
-//         tone: toneVoice?.tone,
-//         voice: toneVoice?.voice,
-//         seo,
-//         intent: intent?.intent,
-//       },
-//       changes: comparison,
-//     };
-
-//     console.log(" Validation data structure:", {
-//       hasOriginal: !!validationData.original,
-//       hasEnhanced: !!validationData.enhanced,
-//       hasChanges: !!validationData.changes,
-//       changesKeys: Object.keys(validationData.changes),
-//       originalKeys: Object.keys(validationData.original),
-//       enhancedKeys: Object.keys(validationData.enhanced)
-//     });
-
-//     const result = CrawlEnhanceSchema.safeParse(validationData);
-
-//     if (!result.success) {
-//       console.error(" Validation failed:", result.error.flatten());
-//       console.error(" Full error details:", JSON.stringify(result.error, null, 2));
-      
-//       // Try to provide a more helpful error response
-//       const errorDetails = result.error.flatten();
-      
-//       return NextResponse.json({
-//         error: "Validation failed - Schema mismatch",
-//         details: {
-//           fieldErrors: errorDetails.fieldErrors,
-//           formErrors: errorDetails.formErrors,
-//           providedChangesKeys: Object.keys(comparison),
-//           validationData: {
-//             hasOriginal: !!validationData.original,
-//             hasEnhanced: !!validationData.enhanced,
-//             hasChanges: !!validationData.changes
-//           }
-//         }
-//       }, { status: 422 });
-//     }
-
-//     // --- Save & Respond ---
-//     try {
-//       await CrawledBlogModel.create({
-//         sourceUrl: rssUrl || "manual-input",
-//         title,
-//         original: result.data.original,
-//         enhanced: result.data.enhanced,
-//         changes: result.data.changes,
-//         createdAt: new Date(),
-//       });
-//     } catch (dbError) {
-//       console.error(
-//         " Database save failed:",
-//         dbError && typeof dbError === "object" && "message" in dbError
-//           ? (dbError as { message?: string }).message
-//           : dbError
-//       );
-//       // Continue anyway
-//     }
-
-//     console.log(" Process completed successfully");
-//     return NextResponse.json(result.data);
-
-//   } catch (err) {
-//     console.error(" Crawl & Enhance Agent Error:", err);
-//     return NextResponse.json({ 
-//       error: "Internal server error - Crawl Agent Failed", 
-//       details: typeof err === "object" && err !== null && "message" in err ? (err as { message?: string }).message : String(err)
-//     }, { status: 500 });
-//   }
-// }
-
-
-
-
-
-
-
-
-import { NextRequest, NextResponse } from "next/server";
-import Parser from "rss-parser";
-import * as cheerio from "cheerio";
-import { CrawlEnhanceSchema } from "./schema";
-import { createEnhancementPrompt } from "./prompt";
-import { isWithinTokenLimit, splitTextByTokenLimit } from "@/app/api/utils/tokenUtils";
-import { connectDB } from "@/app/api/utils/db";
-import { CrawledBlogModel } from "@/app/models/crawledBlog";
-import * as Sentry from "@sentry/nextjs";
-
-const parser = new Parser();
-const MAX_TOKENS = 4000;
-const MAX_CONTENT_TOKENS = 2500; // Reserve tokens for system prompt and other content
-
-// Function to detect if URL is RSS feed or direct article
-function isRSSFeed(url: string) {
-  const rssIndicators = [
-    '/rss',
-    '/feed',
-    '/atom',
-    '.xml',
-    'rss.xml',
-    'feed.xml',
-    'atom.xml'
-  ];
-  
-  const lowerUrl = url.toLowerCase();
-  return rssIndicators.some(indicator => lowerUrl.includes(indicator));
-}
-
-// Function to convert article URL to RSS feed URL
-function tryConvertToRSSUrl(url: string) {
-  const lowerUrl = url.toLowerCase();
-  
-  // Medium user feeds
-  if (lowerUrl.includes('medium.com/@')) {
-    const username = url.match(/@([^/]+)/)?.[1];
-    if (username) {
-      return `https://medium.com/feed/@${username}`;
-    }
-  }
-  
-  // Medium publication feeds  
-  if (lowerUrl.includes('medium.com/') && !lowerUrl.includes('@')) {
-    const pathMatch = url.match(/medium\.com\/([^/]+)/);
-    if (pathMatch && pathMatch[1] !== 'feed') {
-      return `https://medium.com/feed/${pathMatch[1]}`;
-    }
-  }
-  
-  // Common blog platforms
-  const platformConversions = [
-    { pattern: /wordpress\.com/, rss: (url: string) => url.replace(/\/$/, '') + '/feed' },
-    { pattern: /blogspot\.com/, rss: (url: string) => url.replace(/\/$/, '') + '/feeds/posts/default' },
-    { pattern: /ghost\./, rss: (url: string) => url.replace(/\/$/, '') + '/rss' },
-    { pattern: /substack\.com/, rss: (url: string) => url.replace(/\/$/, '') + '/feed' }
-  ];
-  
-  for (const conversion of platformConversions) {
-    if (conversion.pattern.test(lowerUrl)) {
-      return conversion.rss(url);
-    }
-  }
-  
-  return null;
-}
 
 // Function to intelligently truncate content while preserving structure
 function intelligentContentTruncation(content: string, maxTokens: number) {
@@ -1000,16 +358,80 @@ Return only the enhanced blog content in Markdown format.
   );
 }
 
+
+async function crawlAnyUrl(url: string) {
+  let title = "";
+  let content = "";
+  let meta = "";
+let method: "rss" | "article" | "fallback" = "fallback";
+
+
+  // 1️⃣ Try RSS (best effort)
+  try {
+    const feed = await parser.parseURL(url);
+    const firstItem = feed.items?.[0];
+
+    if (firstItem?.link) {
+      method = "rss";
+      title = firstItem.title || "";
+
+      if (firstItem.content && firstItem.content.length > 300) {
+        const $ = cheerio.load(firstItem.content);
+        content = $.text().trim();
+      }
+
+      if (!content || content.length < 300) {
+        const article = await fetchArticleContent(firstItem.link);
+        title ||= article.title;
+        content = article.content;
+        meta = article.meta;
+      }
+    }
+  } catch {
+    // RSS is optional — ignore failure
+  }
+
+  // 2️⃣ Always fallback to article URL
+  if (!content || content.length < 300) {
+    method = "article";
+    const article = await fetchArticleContent(url);
+    title ||= article.title;
+    content = article.content;
+    meta = article.meta;
+  }
+
+  // 3️⃣ Final safety fallback
+  if (!content || content.length < 100) {
+    Sentry.captureMessage("Low confidence crawl result", {
+      level: "warning",
+      extra: { url, contentLength: content?.length || 0 }
+    });
+
+    content =
+      content ||
+      meta ||
+      "The article could not be fully extracted, but enhancement was attempted based on available content.";
+  }
+
+  // Clamp title (CRITICAL)
+  if (title.length > 200) {
+    title = title.slice(0, 200);
+  }
+
+  return { title, content, meta, method };
+}
+
+
 export async function POST(req: NextRequest) {
   return await Sentry.startSpan(
     { name: "CrawlEnhance API Request", op: "api.post" },
     async () => {
       try {
         console.log(" Starting crawl & enhance agent");
-        const { rssUrl, manualContent, manualTitle, userId } = await req.json();
+        const { url, manualContent, manualTitle, userId } = await req.json();
         Sentry.setTag("agent", "crawl-enhance");
         if (userId) Sentry.setUser({ id: userId });
-        console.log(" Request data:", { rssUrl, manualTitle, hasManualContent: !!manualContent });
+        console.log(" Request data:", { url, manualTitle, hasManualContent: !!manualContent });
 
         await connectDB();
 
@@ -1017,108 +439,43 @@ export async function POST(req: NextRequest) {
         let content = manualContent || "";
         let meta = "";
 
-        // --- MODE 1: URL Processing (RSS or Direct Article) ---
-        if (rssUrl && /^https?:\/\/.+/.test(rssUrl)) {
-          Sentry.addBreadcrumb({
-            category: "crawl.mode",
-            message: "Processing URL mode",
-            level: "info",
-            data: { rssUrl }
-          });
 
-          let isRSS = isRSSFeed(rssUrl);
-          Sentry.addBreadcrumb({
-            category: "crawl.mode",
-            message: "RSS feed detection",
-            level: "debug",
-            data: { rssUrl, isRSS }
-          });
-          
-          if (isRSS) {
-            // Handle as RSS feed
-            try {
-              Sentry.addBreadcrumb({ category: "rss", message: "Parsing RSS feed", level: "info", data: { rssUrl } });
-              const feed = await parser.parseURL(rssUrl);
-              Sentry.addBreadcrumb({ category: "rss", message: "RSS parsed", level: "debug", data: { itemCount: feed.items?.length || 0 }});
-              
-              const firstItem = feed.items?.[0];
-              if (!firstItem?.link || !firstItem?.title) {
-                Sentry.captureMessage("No valid blog post found in RSS", { level: "warning", extra: { rssUrl }});
-                return NextResponse.json({ error: "No valid blog post found in RSS" }, { status: 404 });
-              }
 
-              title = firstItem.title;
-              
-              // Try RSS content first
-              if (firstItem.content && firstItem.content.length > 300) {
-                const $ = cheerio.load(firstItem.content, { xmlMode: false});
-                content = $.text().trim();
-              } else if (firstItem.contentSnippet) {
-                content = firstItem.contentSnippet;
-              }
-              
-              // If RSS content is insufficient, fetch from the article URL
-              if (!content || content.length < 300) {
-                Sentry.addBreadcrumb({ category: "rss.fallback", message: "RSS content insufficient, fetching article", level: "info", data: { link: firstItem.link }});
-                const articleData = await fetchArticleContent(firstItem.link);
-                content = articleData.content;
-                meta = articleData.meta;
-              }
 
-            } catch (rssError) {
-              Sentry.captureException(rssError, { extra: { rssUrl }});
-              console.error(
-                " RSS parsing failed:",
-                typeof rssError === "object" && rssError !== null && "message" in rssError
-                  ? (rssError as { message?: string }).message
-                  : String(rssError)
-              );
-              isRSS = false;
-            }
-          }
-          
-          if (!isRSS) {
-            // Handle as direct article URL
-            Sentry.addBreadcrumb({ category: "crawl.mode", message: "Treating as direct article URL", level: "info", data: { url: rssUrl }});
-            try {
-              const articleData = await fetchArticleContent(rssUrl);
-              title = articleData.title;
-              content = articleData.content;
-              meta = articleData.meta;
-            } catch (articleError) {
-              Sentry.captureException(articleError, { extra: { rssUrl }});
-              console.error(
-                " Direct article fetch failed:",
-                typeof articleError === "object" && articleError !== null && "message" in articleError
-                  ? (articleError as { message?: string }).message
-                  : String(articleError)
-              );
-              return NextResponse.json({ 
-                error: "Failed to fetch content from URL", 
-                details: typeof articleError === "object" && articleError !== null && "message" in articleError
-                  ? (articleError as { message?: string }).message
-                  : String(articleError)
-              }, { status: 422 });
-            }
-          }
 
-          if (!content || content.length < 100) {
-            Sentry.captureMessage("Content too short after fetch", { level: "warning", extra: { contentLength: content?.length || 0, url: rssUrl }});
-            return NextResponse.json({ 
-              error: "Blog content too short or not found", 
-              details: `Content length: ${content?.length || 0} characters`,
-              url: rssUrl
-            }, { status: 422 });
-          }
+if (url && /^https?:\/\/.+/.test(url)) {
+  Sentry.addBreadcrumb({
+    category: "crawl.mode",
+    message: "Processing any URL",
+    level: "info",
+    data: { url }
+  });
 
-          Sentry.addBreadcrumb({
-            category: "crawl.extract",
-            message: "Content extraction successful",
-            level: "info",
-            data: { titleLength: title.length, contentLength: content.length, metaLength: meta.length }
-          });
-        }
+  const crawlResult = await crawlAnyUrl(url);
+
+  title = crawlResult.title || title;
+  content = crawlResult.content || content;
+  meta = crawlResult.meta || meta;
+
+  Sentry.addBreadcrumb({
+    category: "crawl.extract",
+    message: "URL crawled successfully",
+    level: "info",
+    data: {
+      method: crawlResult.method,
+      titleLength: title.length,
+      contentLength: content.length
+    }
+  });
+}
+
+
+
         // --- MODE 2: Manual Input ---
+
+
+
+
         else if (manualContent && manualContent.trim().length > 100) {
           Sentry.addBreadcrumb({ category: "crawl.mode", message: "Processing manual input mode", level: "info" });
           console.log(" Processing manual input mode");
@@ -1128,7 +485,7 @@ export async function POST(req: NextRequest) {
         } else {
           Sentry.captureMessage("Invalid input for crawl agent", { level: "warning" });
           return NextResponse.json(
-            { error: "Provide either a valid URL (RSS feed or article) or sufficient manual content (min 100 chars)" },
+            { error: "Provide either a valid URL or sufficient manual content " },
             { status: 400 }
           );
         }
@@ -1345,9 +702,9 @@ Focus on concrete differences and improvements made.`;
 
         // --- Save & Respond ---
         try {
-          Sentry.addBreadcrumb({ category: "db", message: "Saving crawled blog to DB", level: "info", data: { sourceUrl: rssUrl || "manual-input" }});
+          Sentry.addBreadcrumb({ category: "db", message: "Saving crawled blog to DB", level: "info", data: { sourceUrl: url || "manual-input" }});
           await CrawledBlogModel.create({
-            sourceUrl: rssUrl || "manual-input",
+            sourceUrl: url || "manual-input",
             title,
             original: result.data.original,
             enhanced: result.data.enhanced,
