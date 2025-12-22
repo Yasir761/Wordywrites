@@ -86,7 +86,12 @@ function PublishBlogContent() {
       const res = await fetch("/api/integrations/wordpress/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ siteUrl, username, applicationPassword: appPassword, title, content }),
+        body: JSON.stringify({profileId: selectedProfile,
+          //  siteUrl,
+          //   username,
+          //    applicationPassword: appPassword,
+              title,
+               content }),
       });
 
       const data = await res.json();

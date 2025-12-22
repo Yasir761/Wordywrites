@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const BlogProfileSchema = new mongoose.Schema({
   userId: { 
@@ -11,10 +12,10 @@ const BlogProfileSchema = new mongoose.Schema({
   // WordPress connection
   siteUrl: { type: String, required: true },
   username: { type: String, required: true },
-  appPassword: { type: String, required: true }, // 🔒 encrypt before saving
+  appPassword: { type: String, required: true }, //  encrypt before saving
 
   // Blog identity
-  blogName: { type: String, required: true },
+  blogName: { type: String,  },
   blogDescription: { type: String },
   authorName: { type: String },
   location: { type: String },
@@ -33,4 +34,13 @@ const BlogProfileSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+
+
+BlogProfileSchema.pre("save", async function (next) {
+  if (!this.isModified("appPassword")) return next();
+
+  const salt = await bcrypt.genSalt(10);
+  this.appPassword = await bcrypt.hash(this.appPassword, salt);
+  next();
+});
 export const BlogProfileModel = mongoose.models.BlogProfile || mongoose.model("BlogProfile", BlogProfileSchema);
