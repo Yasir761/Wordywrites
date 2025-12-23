@@ -73,6 +73,8 @@ import { publishBlogToWordPress } from "../publish";
 import { WordPressPostSchema } from "../schema";
 import { connectDB } from "@/app/api/utils/db";
 import { BlogProfileModel } from "@/app/models/blogprofile";
+import { BlogModel } from "@/app/models/blog";
+
 import * as Sentry from "@sentry/nextjs";
 
 export async function POST(req: NextRequest) {
@@ -88,7 +90,9 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { profileId, title, content } = body;
+ const { profileId, blogId, title, content, publishNow } = body;
+
+
 
     Sentry.addBreadcrumb({
       category: "wordpress",
@@ -139,12 +143,27 @@ export async function POST(req: NextRequest) {
     });
 
     // Try publishing
-    const result = await publishBlogToWordPress(validated.data);
+    const result = await publishBlogToWordPress(validated.data,publishNow);
 
     // Build edit link
     const editLink = `${profile.siteUrl.replace(/\/$/, "")}/wp-admin/post.php?post=${
       result.id
     }&action=edit`;
+     const publicLink = result.link; 
+
+    if (blogId) {
+     
+
+  await BlogModel.findOneAndUpdate(
+    { _id: blogId, userId },
+    {
+      status: publishNow ? "published" : "completed",
+      wordpressPostId: result.id,
+      wordpressEditLink: editLink,
+      wordpressPublicLink: publicLink,
+    }
+  );
+}
 
     return NextResponse.json({ success: true, editLink, result });
   } catch (err: unknown) {

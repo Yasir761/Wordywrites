@@ -11,9 +11,12 @@ import { useUserPlan } from "@/hooks/useUserPlan";
 import { showToast } from "@/lib/toast";
 import { Lock, Globe } from "lucide-react";
 
+
+
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 function PublishBlogContent() {
+  const [publishNow, setPublishNow] = useState(false);
   const searchParams = useSearchParams();
   const { data: planData, error: planError } = useUserPlan();
   const { data: profiles, error: profileError } = useSWR("/api/blog-profile", fetcher);
@@ -83,6 +86,7 @@ function PublishBlogContent() {
     setLoading(true);
 
     try {
+      const blogId = searchParams.get("blogId")
       const res = await fetch("/api/integrations/wordpress/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,8 +94,10 @@ function PublishBlogContent() {
           //  siteUrl,
           //   username,
           //    applicationPassword: appPassword,
+                blogId,
               title,
-               content }),
+               content,
+              publishNow }),
       });
 
       const data = await res.json();

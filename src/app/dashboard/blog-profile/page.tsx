@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Globe, ShieldCheck, Edit, Trash2, Star } from "lucide-react";
+import { showToast } from "@/lib/toast";
 
 interface BlogProfile {
   _id: string;
@@ -70,11 +71,33 @@ export default function BlogProfilesPage() {
     }
   };
 
+
+
+
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete profile?")) return;
-    await fetch(`/api/blog-profile/${id}`, { method: "DELETE" });
+  if (!confirm("Are you sure you want to delete this blog profile?")) return;
+
+  try {
+    const res = await fetch(`/api/blog-profile/${id}`, {
+      method: "DELETE",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast({ 
+  type: "error",
+  title: "Delete failed",
+  description: data.error || "Unable to delete profile",
+})
+      return;
+    }
+
     fetchProfiles();
-  };
+  } catch {
+    alert("Something went wrong while deleting the profile");
+  }
+};
 
   const handleSetDefault = async (id: string) => {
     await fetch(`/api/blog-profile/${id}/default`, { method: "POST" });
@@ -246,11 +269,18 @@ export default function BlogProfilesPage() {
                 <Edit className="w-4 h-4" />
               </button>
               <button
-                onClick={() => handleDelete(profile._id)}
-                className="p-2 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+  onClick={() => handleDelete(profile._id)}
+  disabled={profile.isDefault}
+  className={`
+    p-2 rounded-lg
+    ${profile.isDefault
+      ? "bg-gray-300/20 text-gray-400 cursor-not-allowed"
+      : "bg-red-500/10 text-red-600 hover:bg-red-500/20"}
+  `}
+>
+  <Trash2 className="w-4 h-4" />
+</button>
+
               {!profile.isDefault && (
                 <button
                   onClick={() => handleSetDefault(profile._id)}

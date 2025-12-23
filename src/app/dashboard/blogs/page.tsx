@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { marked } from "marked";
 import dynamic from "next/dynamic";
 import {
   Dialog,
@@ -22,15 +23,25 @@ import { LocalErrorBoundary } from "../components/LocalErrorBoundary";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
+
+marked.setOptions({
+  gfm: true,
+  breaks: true,
+});
+
+
 export default function BlogsPage() {
   const router = useRouter();
   const { data, error, isLoading } = useBlogs();
+  const [publishingId, setPublishingId] = useState<string | null>(null);
+
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBlog, setSelectedBlog] = useState<any>(null);
 
   const blogs = useMemo(() => {
     if (!data) return [];
+    
     return data.map((b: any) => {
       const blogContent = b?.blogAgent?.blog || "";
       const plainText = blogContent.replace(/[#_*~`>!-]/g, "").trim();
@@ -44,7 +55,10 @@ export default function BlogsPage() {
         title: titleMatch?.[1]?.trim() || b?.keywordAgent?.keyword || "Untitled",
         createdAt: b.createdAt?.slice(0, 10) || "N/A",
         wordCount,
-        status: b.status === "published" ? "Published" : "Draft",
+        status: b.status,
+wordpressEditLink: b.wordpressEditLink,
+wordpressPublicLink: b.wordpressPublicLink,
+      
         blog: blogContent,
       };
     });
@@ -136,15 +150,19 @@ export default function BlogsPage() {
 
                     {/* Status Badge */}
                     <span
-                      className={`
-                        px-2 py-0.5 rounded-md text-[10px] font-medium
-                        ${blog.status === "Published"
-                          ? "bg-green-500/10 text-green-400 border border-green-500/30"
-                          : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/30"}
-                      `}
-                    >
-                      {blog.status}
-                    </span>
+  className={`
+    px-2 py-0.5 rounded-md text-[10px] font-medium capitalize
+    ${
+      blog.status === "published"
+        ? "bg-green-500/10 text-green-400 border border-green-500/30"
+        : blog.status === "completed"
+        ? "bg-blue-500/10 text-blue-400 border border-blue-500/30"
+        : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/30"
+    }
+  `}
+>
+  {blog.status === "published" ? "Published ✓" : blog.status.charAt(0).toUpperCase() + blog.status.slice(1)}
+</span>
                   </div>
 
                   {/* Word Count */}
@@ -157,32 +175,76 @@ export default function BlogsPage() {
 
                   {/* Action buttons */}
                   <div className="grid gap-2 pt-2">
-                    <Button
-                      size="sm"
-                      className="
-                        w-full gap-1 bg-ai-accent hover:bg-ai-accent/90
-                        text-white shadow-[0_0_10px_-4px_var(--ai-accent)]
-                      "
-                      onClick={() =>
-                        router.push(
-                          `/dashboard/wordpress?title=${encodeURIComponent(
-                            blog.title
-                          )}&content=${encodeURIComponent(blog.blog)}`
-                        )
-                      }
-                    >
-                      <UploadIcon className="size-4" /> Publish to WordPress
-                    </Button>
+  {/* DRAFT → Edit / Generate */}
+  {blog.status === "draft" && (
+    <Button
+      size="sm"
+      variant="outline"
+      className="w-full border-ai-accent/40 hover:bg-ai-accent/10"
+      onClick={() => router.push(`/dashboard/create?blogId=${blog._id}`)}
+    >
+      Edit / Generate
+    </Button>
+  )}
 
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full border-ai-accent/40 hover:bg-ai-accent/10"
-                      onClick={() => setSelectedBlog(blog)}
-                    >
-                      View Blog
-                    </Button>
-                  </div>
+  {/* COMPLETED → Publish + Preview */}
+  {blog.status === "completed" && (
+    <>
+      <Button
+  size="sm"
+  className="w-full gap-1 bg-ai-accent hover:bg-ai-accent/90 text-white"
+  disabled={publishingId === blog._id}
+  onClick={() => {
+    setPublishingId(blog._id);
+    router.push(
+      `/dashboard/wordpress?blogId=${blog._id}&title=${encodeURIComponent(
+        blog.title
+      )}&content=${encodeURIComponent(blog.blog)}`
+    );
+  }}
+>
+  <UploadIcon className="size-4" />
+  {publishingId === blog._id ? "Preparing…" : "Publish to WordPress"}
+</Button>
+
+      <Button
+        size="sm"
+        variant="outline"
+        className="w-full border-ai-accent/40 hover:bg-ai-accent/10"
+        onClick={() => setSelectedBlog(blog)}
+      >
+        View Draft
+      </Button>
+    </>
+  )}
+
+  {/* PUBLISHED → View Live + Edit on WP */}
+  {blog.status === "published" && (
+    <>
+      {blog.wordpressPublicLink && (
+        <Button
+          size="sm"
+          className="w-full bg-green-600 hover:bg-green-600/90 text-white"
+          onClick={() => window.open(blog.wordpressPublicLink, "_blank")}
+        >
+          View Live
+        </Button>
+      )}
+
+      {blog.wordpressEditLink && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full border-green-500/40 hover:bg-green-500/10"
+          onClick={() => window.open(blog.wordpressEditLink, "_blank")}
+        >
+          Edit on WordPress
+        </Button>
+      )}
+    </>
+  )}
+</div>
+
                 </CardContent>
               </Card>
             </motion.div>
@@ -225,7 +287,11 @@ export default function BlogsPage() {
                 value="preview"
                 className="prose dark:prose-invert max-h-[70vh] overflow-y-auto border rounded-xl p-4 bg-background/60"
               >
-                <div dangerouslySetInnerHTML={{ __html: selectedBlog?.blog || "" }} />
+                <div
+  dangerouslySetInnerHTML={{
+    __html: marked.parse(selectedBlog?.blog || "")as string,
+  }}
+/>
               </TabsContent>
 
               <TabsContent value="html">

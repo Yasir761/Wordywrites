@@ -265,7 +265,8 @@ async function ensureTerms(
    MAIN PUBLISH FUNCTION
 --------------------------------------------- */
 export async function publishBlogToWordPress(
-  data: WordPressPostInput
+  data: WordPressPostInput,
+  publishNow: boolean = false
 ): Promise<WordPressPostResponse> {
   const {
     siteUrl,
@@ -289,7 +290,7 @@ export async function publishBlogToWordPress(
   const requestBody: any = {
     title,
     content,
-    status: "publish",
+  status: publishNow ? "publish" : "draft",
     excerpt: meta_description || "",
     slug: slug
       ?.toLowerCase()

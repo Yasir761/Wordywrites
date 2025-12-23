@@ -40,13 +40,34 @@ export async function DELETE(req: NextRequest, context: any) {
   try {
     await connectDB();
     const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const id = context.params.id;
-    await BlogProfileModel.findOneAndDelete({ _id: id, userId });
+
+    const profile = await BlogProfileModel.findOne({ _id: id, userId });
+    if (!profile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+
+    // 🚫 Block deleting default profile
+    if (profile.isDefault) {
+      return NextResponse.json(
+        { error: "You cannot delete the default profile" },
+        { status: 400 }
+      );
+    }
+
+    await BlogProfileModel.deleteOne({ _id: id, userId });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("BLOG PROFILE DELETE ERROR:", error);
+    return NextResponse.json(
+      { error: "Failed to delete profile" },
+      { status: 500 }
+    );
   }
 }
+

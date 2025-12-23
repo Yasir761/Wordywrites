@@ -10,6 +10,11 @@ import { showToast } from "@/lib/toast";
 import { marked } from "marked";
 
 
+marked.setOptions({
+  gfm: true,
+  breaks: true,
+});
+
 const FeatureLock = ({ isLocked, children }: { isLocked: boolean; children: React.ReactNode }) => (
   <div className="relative">
     <div className={isLocked ? "blur-sm select-none pointer-events-none" : ""}>{children}</div>
