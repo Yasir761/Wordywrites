@@ -8,65 +8,17 @@ import { isWithinTokenLimit, splitTextByTokenLimit } from "@/app/api/utils/token
 import { connectDB } from "@/app/api/utils/db";
 import { CrawledBlogModel } from "@/app/models/crawledBlog";
 import * as Sentry from "@sentry/nextjs";
+import { consumeCredits } from "@/lib/consumeCredits";
+import { auth } from "@clerk/nextjs/server";
 
 const parser = new Parser();
 const MAX_TOKENS = 4000;
 const MAX_CONTENT_TOKENS = 2500; // Reserve tokens for system prompt and other content
 
 
-// function isRSSFeed(url: string) {
-//   const rssIndicators = [
-//     '/rss',
-//     '/feed',
-//     '/atom',
-//     '.xml',
-//     'rss.xml',
-//     'feed.xml',
-//     'atom.xml'
-//   ];
-  
-//   const lowerUrl = url.toLowerCase();
-//   return rssIndicators.some(indicator => lowerUrl.includes(indicator));
-// }
 
-// Function to convert article URL to RSS feed URL
-// function tryConvertTourl(url: string) {
-//   const lowerUrl = url.toLowerCase();
-  
-//   // Medium user feeds
-//   if (lowerUrl.includes('medium.com/@')) {
-//     const username = url.match(/@([^/]+)/)?.[1];
-//     if (username) {
-//       return `https://medium.com/feed/@${username}`;
-//     }
-//   }
-  
-//   // Medium publication feeds  
-//   if (lowerUrl.includes('medium.com/') && !lowerUrl.includes('@')) {
-//     const pathMatch = url.match(/medium\.com\/([^/]+)/);
-//     if (pathMatch && pathMatch[1] !== 'feed') {
-//       return `https://medium.com/feed/${pathMatch[1]}`;
-//     }
-//   }
-  
-//   // Common blog platforms
-//   const platformConversions = [
-//     { pattern: /wordpress\.com/, rss: (url: string) => url.replace(/\/$/, '') + '/feed' },
-//     { pattern: /blogspot\.com/, rss: (url: string) => url.replace(/\/$/, '') + '/feeds/posts/default' },
-//     { pattern: /ghost\./, rss: (url: string) => url.replace(/\/$/, '') + '/rss' },
-//     { pattern: /substack\.com/, rss: (url: string) => url.replace(/\/$/, '') + '/feed' }
-//   ];
-  
-//   for (const conversion of platformConversions) {
-//     if (conversion.pattern.test(lowerUrl)) {
-//       return conversion.rss(url);
-//     }
-//   }
-  
-//   return null;
-// }
 
-// Function to intelligently truncate content while preserving structure
+
 function intelligentContentTruncation(content: string, maxTokens: number) {
   // First, try to fit within token limit
   if (isWithinTokenLimit(content, maxTokens)) {
@@ -423,12 +375,47 @@ let method: "rss" | "article" | "fallback" = "fallback";
 
 
 export async function POST(req: NextRequest) {
+
+
+
+
+
+
   return await Sentry.startSpan(
     { name: "CrawlEnhance API Request", op: "api.post" },
     async () => {
-      try {
-        console.log(" Starting crawl & enhance agent");
-        const { url, manualContent, manualTitle, userId } = await req.json();
+try {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  console.log(" Starting crawl & enhance agent");
+  const { url, manualContent, manualTitle } = await req.json();
+
+  // basic validation first
+  if (
+    !(url && /^https?:\/\/.+/.test(url)) &&
+    !(manualContent && manualContent.trim().length > 100)
+  ) {
+    return NextResponse.json(
+      { error: "Provide either a valid URL or sufficient manual content" },
+      { status: 400 }
+    );
+  }
+
+  // then consume credits
+  const credit = await consumeCredits(userId, "BLOG_CRAWL");
+
+  if (!credit.allowed) {
+    return NextResponse.json(
+      {
+        error: "No credits left",
+        remainingCredits: credit.remainingCredits,
+      },
+      { status: 402 }
+    );
+  }
         Sentry.setTag("agent", "crawl-enhance");
         if (userId) Sentry.setUser({ id: userId });
         console.log(" Request data:", { url, manualTitle, hasManualContent: !!manualContent });

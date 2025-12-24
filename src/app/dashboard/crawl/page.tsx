@@ -29,6 +29,32 @@ const isLowQualityCrawl =
   typeof result.original?.content === "string" &&
   result.original.content.replace(/\s+/g, "").length < 300;
 
+function handleCreditToast(res: Response, data: any) {
+  if (res.status === 402) {
+    showToast({
+      type: "error",
+      title: "No credits left",
+      description:
+        typeof data?.remainingCredits === "number"
+          ? `You have ${data.remainingCredits} credits remaining. Upgrade to continue.`
+          : "You have no credits left. Upgrade to continue.",
+    });
+
+    return false;
+  }
+
+  if (typeof data?.remainingCredits === "number") {
+    showToast({
+      type: "info",
+      title: "Credit used",
+      description: `Remaining credits: ${data.remainingCredits}`,
+    });
+  }
+
+  return true;
+}
+
+
   const handleEnhance = async () => {
     if (plan !== "Pro") {
       showToast({
@@ -67,17 +93,24 @@ const isLowQualityCrawl =
         ),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Enhancing failed");
+     const data = await res.json();
 
-      setResult(data);
-      setEditedContent(data.enhanced.content);
+// 🔐 CREDIT HANDLING (added)
+if (!handleCreditToast(res, data)) {
+  setLoading(false);
+  return;
+}
 
-      showToast({
-        type: "success",
-        title: "Enhanced successfully",
-        description: "Your blog has been polished by AI.",
-      });
+if (!res.ok) throw new Error(data.error || "Enhancing failed");
+
+setResult(data);
+setEditedContent(data.enhanced.content);
+
+showToast({
+  type: "success",
+  title: "Enhanced successfully",
+  description: "Your blog has been polished by AI.",
+});
     } catch {
       showToast({
         type: "error",

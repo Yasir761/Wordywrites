@@ -15,6 +15,33 @@ marked.setOptions({
   breaks: true,
 });
 
+
+function handleCreditToast(res: Response, data: any) {
+  if (res.status === 402) {
+    showToast({
+      type: "error",
+      title: "No credits left",
+      description:
+        typeof data?.remainingCredits === "number"
+          ? `You have ${data.remainingCredits} credits remaining. Upgrade to continue.`
+          : "You have no credits left. Upgrade to continue.",
+    });
+    window.location.href = "/pricing";
+    return false;
+  }
+
+  if (typeof data?.remainingCredits === "number") {
+    showToast({
+      type: "info",
+      title: "Credit used",
+      description: `Remaining credits: ${data.remainingCredits}`,
+    });
+  }
+
+  return true;
+}
+
+
 const FeatureLock = ({ isLocked, children }: { isLocked: boolean; children: React.ReactNode }) => (
   <div className="relative">
     <div className={isLocked ? "blur-sm select-none pointer-events-none" : ""}>{children}</div>
@@ -132,18 +159,24 @@ const generateBlog = async () => {
   setBlogData(null);
 
   try {
-    // 1️⃣ Run orchestrator FIRST (fast)
-    const orchestratorRes = await fetch(`/api/agents/orchestrator`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ keyword, subject, tone }),
-    });
+    //  Run orchestrator FIRST (fast)
+ const orchestratorRes = await fetch(`/api/agents/orchestrator`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ keyword, subject, tone }),
+});
 
-    const orchestratorData = await orchestratorRes.json();
+const orchestratorData = await orchestratorRes.json();
 
-    if (!orchestratorRes.ok) {
-      throw new Error(orchestratorData?.error || "Orchestrator failed");
-    }
+//  CREDIT HANDLING
+if (!handleCreditToast(orchestratorRes, orchestratorData)) {
+  setIsLoading(false);
+  return;
+}
+
+if (!orchestratorRes.ok) {
+  throw new Error(orchestratorData?.error || "Orchestrator failed");
+}
 
     setStep("generate");
 
@@ -188,9 +221,7 @@ const generateBlog = async () => {
       fullText += chunk;
 
       setStreamedBlog(fullText);
-      // setBlogData((prev) =>
-      //   prev ? { ...prev, blog: fullText } : prev
-      // );
+     
     }
 
     setIsStreaming(false);
@@ -199,18 +230,7 @@ const generateBlog = async () => {
   prev ? { ...prev, blog: finalHtml } : prev
 );
 
-    //  SAVE FINAL BLOG (IMPORTANT)
-    // await fetch("/api/agents/blog", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     keyword,
-    //     outline: orchestratorData.blueprint?.outline,
-    //     tone,
-    //     seo: orchestratorData.seo,
-    //     regenerate: true,
-    //   }),
-    // });
+
 
     showToast({
       type: "success",

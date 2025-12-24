@@ -9,6 +9,7 @@ import {
 
 import { connectDB } from "@/app/api/utils/db";
 import { cachedAgent, deleteCacheKey } from "@/lib/cache";
+import { consumeCredits } from "@/lib/consumeCredits";
 
 import * as Sentry from "@sentry/nextjs";
 
@@ -158,6 +159,19 @@ export async function POST(req: NextRequest) {
           seo_score:
             typeof seo?.seo_score === "number" ? seo.seo_score : 50,
         };
+
+        const credit = await consumeCredits(req.headers.get("x-user-id") || "", "BLOG_GENERATE");
+
+if (!credit.allowed) {
+  return NextResponse.json(
+    {
+      error: "No credits left",
+      remainingCredits: credit.remainingCredits,
+    },
+    { status: 402 }
+  )
+} ;
+
 
         await connectDB();
 

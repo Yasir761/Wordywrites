@@ -71,6 +71,36 @@ function PublishBlogContent() {
     }
   }
 
+
+  // credit check 
+
+
+
+  function handleCreditToast(res: Response, data: any) {
+  if (res.status === 402) {
+    showToast({
+      type: "error",
+      title: "No credits left",
+      description:
+        typeof data?.remainingCredits === "number"
+          ? `You have ${data.remainingCredits} credits remaining. Upgrade to continue.`
+          : "You have no credits left. Upgrade to continue.",
+    });
+    window.location.href = "/pricing";
+    return false;
+  }
+
+  if (typeof data?.remainingCredits === "number") {
+    showToast({
+      type: "info",
+      title: "Credit used",
+      description: `Remaining credits: ${data.remainingCredits}`,
+    });
+  }
+
+  return true;
+}
+
   /* ------------------------- Publish to WP ------------------------- */
   async function handlePublish() {
     if (plan !== "Pro") {
@@ -91,9 +121,7 @@ function PublishBlogContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({profileId: selectedProfile,
-          //  siteUrl,
-          //   username,
-          //    applicationPassword: appPassword,
+        
                 blogId,
               title,
                content,
@@ -101,13 +129,20 @@ function PublishBlogContent() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed publishing");
 
-      showToast({
-        type: "success",
-        title: "Published Successfully",
-        description: "Your blog has been pushed to WordPress.",
-      });
+//  CREDIT HANDLING
+if (!handleCreditToast(res, data)) {
+  setLoading(false);
+  return;
+}
+
+if (!res.ok) throw new Error(data.error || "Failed publishing");
+
+showToast({
+  type: "success",
+  title: "Published Successfully",
+  description: "Your blog has been pushed to WordPress.",
+});
 
       if (data.editLink) window.open(data.editLink, "_blank");
     } catch (err: any) {
