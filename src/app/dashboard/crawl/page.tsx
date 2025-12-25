@@ -95,7 +95,7 @@ function handleCreditToast(res: Response, data: any) {
 
      const data = await res.json();
 
-// 🔐 CREDIT HANDLING (added)
+//  CREDIT HANDLING (added)
 if (!handleCreditToast(res, data)) {
   setLoading(false);
   return;

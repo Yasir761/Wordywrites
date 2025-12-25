@@ -7,7 +7,7 @@
 // Each variation must follow this exact structure:
 // 1. Hook: A single compelling sentence (no formatting, no bold, no markdown).
 // 2. Bullets: 2–3 short bullets (max 10 words each). Start each bullet with a dash (-).
-// 3. CTA: A single call-to-action line (e.g., Read the full blog here 👇).
+// 3. CTA: A single call-to-action line (e.g., Read the full blog here ).
 
 // After all 3 variations, provide:
 // - Hashtags: Exactly 5 hashtags separated by spaces (no numbers, no markdown, only #words).
@@ -43,7 +43,7 @@ Create exactly 3 teaser variations for the blog below.
 Each variation must follow this structure:
 1. Hook: One compelling sentence only (no formatting, no markdown).
 2. Bullets: 2–3 concise bullets (max 10 words each). Each must begin with a dash (-).
-3. CTA: One short call-to-action line (e.g., Read the full blog here 👇).
+3. CTA: One short call-to-action line (e.g., Read the full blog here ).
 
 After all 3 variations, provide:
 - Hashtags: Exactly 5 relevant hashtags separated by spaces (no numbers, no markdown).

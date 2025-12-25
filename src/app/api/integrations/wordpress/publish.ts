@@ -2,7 +2,7 @@
 // import { getWordPressAuthToken } from "./auth";
 // import { WordPressPostResponse } from "./types";
 
-// // 🔹 Simple keyword extraction for auto-tags
+// //  Simple keyword extraction for auto-tags
 // function extractKeywords(text: string, limit = 8): string[] {
 //   const stopwords = new Set([
 //     "the","is","and","to","in","of","a","for","on","with","as","by","this","that",
@@ -103,7 +103,7 @@
 //   let finalTags = Array.isArray(tags) && tags.length > 0 ? tags : [];
 //   if (finalTags.length === 0 && content) {
 //     finalTags = extractKeywords(content);
-//     // console.log("🔹 Auto-generated tags:", finalTags);
+//     // console.log(" Auto-generated tags:", finalTags);
 //   }
 //   if (finalTags.length > 0) {
 //     requestBody.tags = await ensureTerms(siteUrl, authHeader, finalTags, "tags");
@@ -139,7 +139,7 @@
 
 //     return JSON.parse(text) as WordPressPostResponse;
 //   } catch (err: any) {
-//     console.error("💥 WordPress publish exception:", err?.message || err);
+//     console.error(" WordPress publish exception:", err?.message || err);
 //     throw err;
 //   }
 // }
@@ -169,7 +169,7 @@ async function safeFetch(
     return await fetch(url, {
       ...options,
       signal: controller.signal,
-      keepalive: false, // 🔑 critical for WP + Undici
+      keepalive: false, //  critical for WP + Undici
     });
   } finally {
     clearTimeout(timer);
@@ -212,7 +212,7 @@ async function ensureTerms(
   const ids: number[] = [];
   const BASE = siteUrl.replace(/\/$/, "");
 
-  // 🚫 Hard limits to avoid WP overload
+  //  Hard limits to avoid WP overload
   const SAFE_LIMIT = type === "tags" ? 4 : 2;
   const safeNames = names.slice(0, SAFE_LIMIT);
 
@@ -253,7 +253,7 @@ async function ensureTerms(
       const created = await createRes.json();
       if (created?.id) ids.push(created.id);
     } catch {
-      // 🚨 Never block publishing because of tags
+      //  Never block publishing because of tags
       continue;
     }
   }
@@ -298,7 +298,7 @@ export async function publishBlogToWordPress(
       .replace(/[^a-z0-9-]/g, ""),
   };
 
-  // 🔹 Tags
+  //  Tags
   const finalTags =
     Array.isArray(tags) && tags.length > 0
       ? tags
@@ -313,7 +313,7 @@ export async function publishBlogToWordPress(
     );
   }
 
-  // 🔹 Categories
+  //  Categories
   if (Array.isArray(categories) && categories.length > 0) {
     requestBody.categories = await ensureTerms(
       siteUrl,
@@ -323,7 +323,7 @@ export async function publishBlogToWordPress(
     );
   }
 
-  // 🔹 Publish
+  //  Publish
   const res = await safeFetch(endpoint, {
     method: "POST",
     headers: {

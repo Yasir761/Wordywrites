@@ -409,14 +409,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Price ID is required" }, { status: 400 });
     }
 
-    // 🔥 PROPER GEO IP DETECTION
+    //  PROPER GEO IP DETECTION
     const ip =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       req.headers.get("cf-connecting-ip") ||
       req.headers.get("x-real-ip") ||
       undefined;
 
-    // 🔥 Correct Paddle lookup endpoint
+    //  Correct Paddle lookup endpoint
     const lookupUrl = `https://api.paddle.com/prices/lookup?price_id=${priceId}${
       ip ? `&customer_ip_address=${ip}` : ""
     }`;
@@ -440,7 +440,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔥 CREATE TRANSACTION WITH CORRECT LOCALIZED CURRENCY
+    //  CREATE TRANSACTION WITH CORRECT LOCALIZED CURRENCY
     const transactionRes = await fetch("https://api.paddle.com/transactions", {
       method: "POST",
       headers: {

@@ -170,7 +170,7 @@ export default function AIAgentsPanel() {
         </div>
 
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        {/* 🔥 Premium Standalone Crawl & Enhance Card */}
+        {/*  Premium Standalone Crawl & Enhance Card */}
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}

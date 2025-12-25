@@ -7,10 +7,31 @@ import { Stars, Feather, ScanSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
+
 
 export default function DashboardHeroBanner() {
   const { user } = useUser();
   const firstName = user?.firstName || "Writer";
+  const [stats, setStats] = useState<{
+  blogCount: number;
+  totalWords: number;
+} | null>(null);
+
+useEffect(() => {
+  fetch("/api/user/stats")
+    .then((res) => res.json())
+    .then((data) => {
+      if (!data?.error) {
+        setStats({
+          blogCount: data.blogCount,
+          totalWords: data.totalWords,
+        });
+      }
+    })
+    .catch(() => {});
+}, []);
+
 
   return (
     <div className="relative px-6 pt-8 pb-10">
@@ -60,8 +81,8 @@ export default function DashboardHeroBanner() {
         <div className="grid grid-cols-2 gap-6">
           <div className="text-right">
             <div className="text-3xl font-bold leading-none text-foreground">
-              14,239
-            </div>
+  {stats ? stats.totalWords.toLocaleString() : "—"}
+</div>
             <div className="text-xs text-muted-foreground tracking-wide mt-1">
               Words written
             </div>
@@ -69,8 +90,8 @@ export default function DashboardHeroBanner() {
 
           <div className="text-right">
             <div className="text-3xl font-bold leading-none text-foreground">
-              14
-            </div>
+  {stats ? stats.blogCount : "—"}
+</div>
             <div className="text-xs text-muted-foreground tracking-wide mt-1">
               Blogs created
             </div>

@@ -47,13 +47,13 @@ export async function POST(req: Request) {
   try {
     const { name, email, message, website } = await req.json();
 
-    // 🛡️ Honeypot check
+    // ️ Honeypot check
     if (website) {
       Sentry.captureMessage("Spam bot triggered honeypot field", "warning");
       return NextResponse.json({ error: "Spam detected" }, { status: 400 });
     }
 
-    // 🧪 Validation errors (log soft breadcrumbs)
+    //  Validation errors (log soft breadcrumbs)
     if (!name || !email || !message || message.length > 2000) {
       Sentry.addBreadcrumb({
         category: "validation",
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid submission" }, { status: 400 });
     }
 
-    // 🌐 Forward to Formspree
+    //  Forward to Formspree
     const res = await fetch("https://formspree.io/f/mblkoqwq", {
       method: "POST",
       headers: { Accept: "application/json" },

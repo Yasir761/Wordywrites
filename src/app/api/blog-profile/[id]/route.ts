@@ -51,7 +51,7 @@ export async function DELETE(req: NextRequest, context: any) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    // 🚫 Block deleting default profile
+    //  Block deleting default profile
     if (profile.isDefault) {
       return NextResponse.json(
         { error: "You cannot delete the default profile" },

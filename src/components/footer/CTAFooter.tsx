@@ -121,7 +121,7 @@
 //       {showPopup && (
 //         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
 //           <div className="bg-white p-6 rounded-2xl shadow-lg text-center">
-//             <h3 className="text-lg font-semibold text-gray-800">🎉 Thank you for subscribing!</h3>
+//             <h3 className="text-lg font-semibold text-gray-800"> Thank you for subscribing!</h3>
 //             <p className="mt-2 text-gray-600">Please check your inbox for confirmation.</p>
 //             <Button
 //               className="mt-4 rounded-full"
@@ -274,7 +274,7 @@ export default function CTAAndFooter() {
       {showPopup && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
           <div className="bg-white p-6 rounded-2xl shadow-lg text-center">
-            <h3 className="text-lg font-semibold text-gray-800">🎉 Thank you for subscribing!</h3>
+            <h3 className="text-lg font-semibold text-gray-800"> Thank you for subscribing!</h3>
             <p className="mt-2 text-gray-600">Please check your inbox for confirmation.</p>
             <Button
               className="mt-4 rounded-full"
