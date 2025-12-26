@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { connectDB } from "@/app/api/utils/db";
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
 
     await connectDB();
 
-    // IDMPOTENCY CHECK
+    // Idempotency check
     const alreadyProcessed = await TransactionModel.findOne({
       paddleEventId: eventId,
     });
@@ -61,16 +62,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // Clerk userId
+    // Extract shared fields
     const userId = data?.custom_data?.userId;
     const paddleCustomerId = data?.customer_id;
     const subscriptionId = data?.id;
     const productId = data?.items?.[0]?.price?.product_id;
 
+    // If we cannot map user, acknowledge and exit
+    if (!userId) {
+      console.warn("Webhook received without userId");
+      return NextResponse.json({ received: true });
+    }
+
     switch (event_type) {
       case "transaction.completed": {
-        if (!userId) break;
-
         await TransactionModel.create({
           email: data?.customer?.email,
           plan: data?.items?.[0]?.price?.name,
@@ -84,7 +89,10 @@ export async function POST(req: Request) {
 
         await UserModel.findOneAndUpdate(
           { userId },
-          { ...(paddleCustomerId && { paddleCustomerId }) }
+          {
+            ...(paddleCustomerId && { paddleCustomerId }),
+            checkoutInProgress: false,
+          }
         );
 
         console.log("Transaction completed for user:", userId);
@@ -92,8 +100,6 @@ export async function POST(req: Request) {
       }
 
       case "subscription.activated": {
-        if (!userId) break;
-
         await TransactionModel.create({
           email: data?.customer?.email,
           plan: "Pro",
@@ -110,17 +116,16 @@ export async function POST(req: Request) {
               productId === "pro_01k3drvrme1ccrvxs07fyw5q7d" ? "Pro" : "Free",
             credits:
               productId === "pro_01k3drvrme1ccrvxs07fyw5q7d" ? 999 : 5,
-            ...(subscriptionId && { paddleSubscriptionId: subscriptionId }),
+            paddleSubscriptionId: subscriptionId || null,
+            checkoutInProgress: false,
           }
         );
 
-        console.log("Subscription activated:", userId);
+        console.log("Subscription activated for user:", userId);
         break;
       }
 
       case "subscription.canceled": {
-        if (!userId) break;
-
         await TransactionModel.create({
           email: data?.customer?.email,
           plan: "Free",
@@ -136,10 +141,11 @@ export async function POST(req: Request) {
             plan: "Free",
             credits: 5,
             paddleSubscriptionId: null,
+            checkoutInProgress: false,
           }
         );
 
-        console.log("Subscription canceled:", userId);
+        console.log("Subscription canceled for user:", userId);
         break;
       }
 
@@ -151,7 +157,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("Webhook processing error:", err);
 
-    //  NEVER return 500 to Paddle
+    // Never return non-200 to Paddle
     return NextResponse.json({ received: true });
   }
 }

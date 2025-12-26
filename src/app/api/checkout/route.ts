@@ -1,401 +1,9 @@
-// import { NextResponse } from "next/server";
-// import { auth } from "@clerk/nextjs/server"
-// export async function POST(req: Request) {
-//   try {
-//     const { userId } = await auth()
-//      if (!userId) {
-//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//     }
-//     const body = await req.json();
-//     const { priceId } = body;
-
-//     console.log("Received request body:", body);
-
-//     if (!priceId) {
-//       return NextResponse.json(
-//         { error: "Price ID is required" },
-//         { status: 400 }
-//       );
-//     }
-
-//     console.log("Creating transaction with price ID:", priceId);
-
-//     const transactionRes = await fetch("https://api.paddle.com/transactions", {
-//       method: "POST",
-//       headers: {
-//         Authorization: `Bearer ${process.env.PADDLE_PRODUCTION_API}`,
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify({
-        
-//         items: [
-//           {
-//             price_id: priceId,
-//             quantity: 1,
-//           },
-//         ],
-//         custom_data:{
-//           userId: String(userId)
-//         },
-//         //  Redirect URLs (make sure these routes exist in your Next.js app)
-//         success_url: "http://wordywrites.app/dashboard",
-//         // cancel_url: "http://localhost:3000/cancel",
-//       }),
-//     });
-
-//     const transactionData = await transactionRes.json();
-//     console.log("Paddle Transaction API response:", transactionData);
-
-//     if (!transactionRes.ok) {
-//       console.error(" Paddle Transaction API error:");
-//       console.error("Status:", transactionRes.status);
-//       console.error("Response:", JSON.stringify(transactionData, null, 2));
-//       if (transactionData.error?.errors) {
-//         console.error(
-//           "Detailed errors:",
-//           JSON.stringify(transactionData.error.errors, null, 2)
-//         );
-//       }
-//       return NextResponse.json({ error: transactionData }, { status: 500 });
-//     }
-
-//     const transaction = transactionData.data;
-//     console.log(
-//       " Transaction created:",
-//       transaction.id,
-//       "Status:",
-//       transaction.status
-//     );
-
-//     const checkoutUrl = transaction.checkout?.url;
-
-//     if (!checkoutUrl) {
-//       console.error(" No checkout URL in transaction:", transaction);
-//       return NextResponse.json(
-//         { error: "No checkout URL available" },
-//         { status: 500 }
-//       );
-//     }
-
-//     console.log(" Checkout URL:", checkoutUrl);
-
-//     return NextResponse.json({
-//       transactionId: transaction.id,
-//       checkoutUrl,
-//       status: transaction.status,
-//     });
-//   } catch (err: any) {
-//     console.error(" Checkout API error:", err);
-//     return NextResponse.json({ error: err.message }, { status: 500 });
-//   }
-// }
-
-
-
-
-
-// import { NextResponse } from "next/server";
-// import { auth } from "@clerk/nextjs/server";
-// import * as Sentry from "@sentry/nextjs";
-
-// export async function POST(req: Request) {
-//   const transactionSpan = Sentry.startSpan({ name: "paddle.transaction.create" }, (span) => span);
-
-//   try {
-//     const { userId } = await auth();
-//     if (!userId) {
-//       Sentry.captureMessage("Unauthorized payment attempt", "warning");
-//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//     }
-
-//     const body = await req.json();
-//     const { priceId } = body;
-
-//     Sentry.addBreadcrumb({
-//       category: "payment",
-//       message: "Starting Paddle transaction",
-//       data: { priceId, userId },
-//       level: "info",
-//     });
-
-//     if (!priceId) {
-//       Sentry.captureMessage("Missing priceId in Paddle checkout");
-//       return NextResponse.json({ error: "Price ID is required" }, { status: 400 });
-//     }
-
-//     const res = await fetch("https://api.paddle.com/transactions", {
-//       method: "POST",
-//       headers: {
-//         Authorization: `Bearer ${process.env.PADDLE_PRODUCTION_API}`,
-        
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify({
-//         items: [{ price_id: priceId, quantity: 1 }],
-//         custom_data: { userId },
-//         success_url: "https://wordywrites.app/dashboard",
-//       }),
-//     });
-
-
-//     const json = await res.json();
-
-//     if (!res.ok) {
-//       Sentry.captureException(new Error("Paddle transaction failed"), {
-//         extra: {
-//           status: res.status,
-//           response: json,
-//         },
-//       });
-
-//       return NextResponse.json({ error: json }, { status: 500 });
-//     }
-
-//     const checkoutUrl = json.data?.checkout?.url;
-//     if (!checkoutUrl) {
-//       Sentry.captureException(new Error("Missing checkout URL in Paddle response"), {
-//         extra: json,
-//       });
-
-//       return NextResponse.json(
-//         { error: "No checkout URL available" },
-//         { status: 500 }
-//       );
-//     }
-
-//     return NextResponse.json({
-//       transactionId: json.data.id,
-//       checkoutUrl,
-//       status: json.data.status,
-//     });
-//   } catch (err) {
-//     Sentry.captureException(err);
-//     return NextResponse.json(
-//       { error: err instanceof Error ? err.message : "Server error" },
-//       { status: 500 }
-//     );
-//   } finally {
-//     transactionSpan.end();
-//   }
-// }
-
-
-
-
-// Geo-location based version
-
-
-
-// import { NextResponse } from "next/server";
-// import { auth } from "@clerk/nextjs/server";
-// import * as Sentry from "@sentry/nextjs";
-
-// export async function POST(req: Request) {
-//   try {
-//     const { userId } = await auth();
-//     if (!userId) {
-//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//     }
-
-//     const body = await req.json();
-//     const { priceId } = body;
-//     if (!priceId) {
-//       return NextResponse.json({ error: "Price ID is required" }, { status: 400 });
-//     }
-
-//     //  Detect customer IP to apply correct currency in Paddle
-//     const forwarded = req.headers.get("x-forwarded-for");
-//     const ip = forwarded ? forwarded.split(",")[0] : undefined;
-
-//     //  Currency is chosen automatically by Paddle based on currency_code + IP
-//     const priceLookupRes = await fetch(
-//       `https://api.paddle.com/prices/lookup?price_id=${priceId}${
-//         ip ? `&customer_ip=${ip}` : ""
-//       }`,
-//       {
-//         headers: {
-//           Authorization: `Bearer ${process.env.PADDLE_PRODUCTION_API}`,
-//         },
-//       }
-//     );
-
-//     const priceLookupJson = await priceLookupRes.json();
-//     const price = priceLookupJson?.data?.[0];
-
-//     if (!price) {
-//       Sentry.captureException(new Error("Paddle price lookup failed"), {
-//         extra: priceLookupJson,
-//       });
-//       return NextResponse.json(
-//         { error: "Paddle price lookup failed" },
-//         { status: 500 }
-//       );
-//     }
-
-//     const res = await fetch("https://api.paddle.com/transactions", {
-//       method: "POST",
-//       headers: {
-//         Authorization: `Bearer ${process.env.PADDLE_PRODUCTION_API}`,
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify({
-//         items: [
-//           {
-//             price_id: priceId,
-//             quantity: 1,
-//             //  Forces correct local currency
-//             currency_code: price.currency_code,
-//           },
-//         ],
-//         customer_ip_address: ip,
-//         custom_data: { userId },
-//         success_url: "https://wordywrites.app/dashboard",
-//       }),
-//     });
-
-//     const json = await res.json();
-//     if (!res.ok) {
-//       return NextResponse.json({ error: json }, { status: 500 });
-//     }
-
-//     const checkoutUrl = json.data?.checkout?.url;
-//     if (!checkoutUrl) {
-//       return NextResponse.json(
-//         { error: "No checkout URL available" },
-//         { status: 500 }
-//       );
-//     }
-
-//     return NextResponse.json({
-//       transactionId: json.data.id,
-//       checkoutUrl,
-//       status: json.data.status,
-//     });
-//   } catch (err: any) {
-//     Sentry.captureException(err);
-//     return NextResponse.json(
-//       { error: err.message || "Server error" },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-
-
-
-
-
-
-
-// import { NextResponse } from "next/server";
-// import { auth } from "@clerk/nextjs/server";
-// import * as Sentry from "@sentry/nextjs";
-
-// export async function POST(req: Request) {
-//   try {
-//     const { userId } = await auth();
-//     if (!userId) {
-//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//     }
-
-//     const { priceId } = await req.json();
-//     if (!priceId) {
-//       return NextResponse.json({ error: "Price ID is required" }, { status: 400 });
-//     }
-
-//     //  PROPER GEO IP DETECTION
-//     const ip =
-//       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-//       req.headers.get("cf-connecting-ip") ||
-//       req.headers.get("x-real-ip") ||
-//       undefined;
-
-//     //  Correct Paddle lookup endpoint
-//     const lookupUrl = `https://api.paddle.com/prices/lookup?price_id=${priceId}${
-//       ip ? `&customer_ip_address=${ip}` : ""
-//     }`;
-
-//     const priceLookupRes = await fetch(lookupUrl, {
-//       headers: {
-//         Authorization: `Bearer ${process.env.PADDLE_PRODUCTION_API}`,
-//       },
-//     });
-
-//     const lookupJson = await priceLookupRes.json();
-//     const price = lookupJson?.data?.[0];
-
-//     if (!price) {
-//       Sentry.captureException(new Error("Paddle price lookup failed"), {
-//         extra: lookupJson,
-//       });
-//       return NextResponse.json(
-//         { error: "Failed to fetch localized Paddle pricing" },
-//         { status: 500 }
-//       );
-//     }
-
-//     //  CREATE TRANSACTION WITH CORRECT LOCALIZED CURRENCY
-//     const transactionRes = await fetch("https://api.paddle.com/transactions", {
-//       method: "POST",
-//       headers: {
-//         Authorization: `Bearer ${process.env.PADDLE_PRODUCTION_API}`,
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify({
-//         items: [
-//           {
-//             price_id: priceId,
-//             quantity: 1,
-//             currency_code: price.currency_code, // ₹ / £ / € etc.
-//           },
-//         ],
-//         customer_ip_address: ip,
-//         custom_data: { userId },
-//         success_url: "https://wordywrites.app/dashboard",
-//       }),
-//     });
-
-//     const json = await transactionRes.json();
-
-//     if (!transactionRes.ok) {
-//       Sentry.captureException(new Error("Paddle checkout failed"), {
-//         extra: json,
-//       });
-//       return NextResponse.json({ error: json }, { status: 500 });
-//     }
-
-//     const checkoutUrl = json.data?.checkout?.url;
-//     if (!checkoutUrl) {
-//       return NextResponse.json(
-//         { error: "Checkout URL missing from Paddle" },
-//         { status: 500 }
-//       );
-//     }
-
-//     return NextResponse.json({
-//       transactionId: json.data.id,
-//       checkoutUrl,
-//       status: json.data.status,
-//     });
-//   } catch (err: any) {
-//     Sentry.captureException(err);
-//     return NextResponse.json(
-//       { error: err.message || "Server error" },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-
-
-
-
-
 
 
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
+ import { UserModel } from "@/app/models/user";
 
 export async function POST(req: Request) {
   try {
@@ -408,6 +16,39 @@ export async function POST(req: Request) {
     if (!priceId) {
       return NextResponse.json({ error: "Price ID is required" }, { status: 400 });
     }
+
+
+   
+
+const user = await UserModel.findOne({ userId });
+
+if (user?.plan === "Pro") {
+  return NextResponse.json(
+    { error: "User already has an active subscription" },
+    { status: 400 }
+  );
+}
+
+//  Prevent duplicate checkout
+const locked = await UserModel.findOneAndUpdate(
+  {
+    userId,
+    checkoutInProgress: { $ne: true },
+  },
+  {
+    checkoutInProgress: true,
+  },
+  { new: true }
+);
+
+if (!locked) {
+  return NextResponse.json(
+    { error: "Checkout already in progress" },
+    { status: 409 }
+  );
+}
+
+
 
     //  PROPER GEO IP DETECTION
     const ip =
