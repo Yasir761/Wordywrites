@@ -21,6 +21,10 @@ const ALL_AGENTS = [
 
 
 export async function GET() {
+
+  if (!process.env.MONGODB_URI) {
+    return NextResponse.json({ agents: [] });
+  }
   const { userId } = await auth();
   const clerkUser = await currentUser();
 
