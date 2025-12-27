@@ -4,7 +4,7 @@ import { BlogProfileModel } from "@/app/models/blogprofile";
 import { auth } from "@clerk/nextjs/server";
 import { getUserPlan } from "@/app/api/utils/planUtils";
 
-/* ✅ GET all profiles */
+/*  GET all profiles */
 export async function GET() {
   try {
     await connectDB();

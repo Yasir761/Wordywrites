@@ -1,5 +1,5 @@
 export interface WordPressPostResponse {
-  id: number; // Unique ID of the post
+  id: number; // Unique ID of the post in WordPress
   date: string; // ISO date string of post creation (e.g., "2025-07-22T10:00:00")
   slug: string; // Slug used in the URL
   link: string; // Full public URL of the published blog post

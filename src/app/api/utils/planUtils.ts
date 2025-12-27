@@ -1,6 +1,6 @@
 
 import { PLANS } from "@/app/constants/plans";
-import { UserModel } from "@/app/models/user"; // or wherever you store user subscription
+import { UserModel } from "@/app/models/user"; 
 
 
 

@@ -33,7 +33,7 @@ export const WordPressPostSchema = z.object({
     .max(160, "Meta description must be 160 characters or less")
     .optional(),
 
-  // ✅ Added support for tags and categories
+  //  Added support for tags and categories
   tags: z.array( z.string()).optional(),
   categories: z.array( z.string()).optional(),
 });
