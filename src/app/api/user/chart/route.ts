@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   const cacheKey = `stats:${userId}:${range}`;
 
   // TRY REDIS CACHE FIRST 
-  let cached = await redis.get(cacheKey);
+  const cached = await redis.get(cacheKey);
 
   if (cached) {
     try {

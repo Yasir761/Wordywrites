@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
       DEFAULT_PRICE;
 
     // Format price correctly
-    let formatted =
+    const formatted =
       priceConfig.currency === "INR" || priceConfig.currency === "JPY"
         ? `${priceConfig.symbol}${Math.round(priceConfig.amount)}`
         : `${priceConfig.symbol}${priceConfig.amount.toFixed(2)}`;
