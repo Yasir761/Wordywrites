@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 
   const cacheKey = `stats:${userId}:${range}`;
 
-  // ----------- TRY REDIS CACHE FIRST -----------
+  // TRY REDIS CACHE FIRST 
   let cached = await redis.get(cacheKey);
 
   if (cached) {
@@ -61,7 +61,7 @@ export async function GET(req: Request) {
     }
   }
 
-  // ----------- FALLBACK TO DATABASE -----------
+  //  FALLBACK TO DATABASE 
   await connectDB();
 
   let startDate = new Date(0);
@@ -73,7 +73,7 @@ export async function GET(req: Request) {
     createdAt: { $gte: startDate },
   }).select("createdAt blogAgent.wordCount seoAgent.seo_score");
 
-  // ----------- AGGREGATION -----------
+  // AGGREGATION 
   const dailyStats: Record<string, { blogs: number; totalSEO: number }> = {};
 
   blogs.forEach((blog) => {
@@ -99,7 +99,7 @@ export async function GET(req: Request) {
   const responseJSON = JSON.stringify(chartData);
   const etag = crypto.createHash("sha1").update(responseJSON).digest("hex");
 
-  // ----------- STORE IN REDIS -----------
+  //  STORE IN REDIS
   await redis.set(cacheKey, responseJSON, { ex: TTL });
 
   return new NextResponse(responseJSON, {

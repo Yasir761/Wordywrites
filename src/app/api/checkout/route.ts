@@ -57,7 +57,7 @@ if (!locked) {
       req.headers.get("x-real-ip") ||
       undefined;
 
-    //  Correct Paddle lookup endpoint
+   
     const lookupUrl = `https://api.paddle.com/prices/lookup?price_id=${priceId}${
       ip ? `&customer_ip_address=${ip}` : ""
     }`;

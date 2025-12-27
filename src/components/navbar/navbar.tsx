@@ -12,7 +12,7 @@ const navItems = [
   { name: 'How It Works', href: '#how-it-works' },
   { name: 'Pricing', href: '#pricing' },
   { name: 'FAQs', href: '#faq' },
-  { name: 'Contact', href: '/contact' }, // ✅ changed from #contact to /contact
+  { name: 'Contact', href: '/contact' }, //  changed from #contact to /contact
 ]
 
 export default function Navbar() {
