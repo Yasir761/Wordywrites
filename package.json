@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type": "module"
+    "type": "module",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",
