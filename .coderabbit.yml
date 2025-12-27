@@ -1,29 +1,11 @@
+language: en
+
 reviews:
-  auto_review: true
-  review_status: true
-
-language:
-  javascript:
-    enabled: true
-  typescript:
+  auto_review:
     enabled: true
 
-checks:
-  security: true
-  performance: true
-  correctness: true
-  best_practices: true
+  review_status:
+    enabled: true
 
 comments:
-  style: concise
   tone: professional
-
-paths:
-  include:
-    - app/**
-    - lib/**
-    - components/**
-  exclude:
-    - node_modules/**
-    - .next/**
-    - dist/**
