@@ -50,11 +50,41 @@ const connections: [number, number][] = [
 ]
 
 const buzzwords = [
-  "Rank-Optimized",
-  "AI-Powered",
-  "Traffic-Boosting",
-  "Effortless",
+ "Analyzes Google before writing",
+  "Refreshes existing blogs from a URL",
+  "Writes content structured to rank",
+  "Publishes directly to WordPress",
 ]
+
+// function AnimatedHeadline() {
+//   const [index, setIndex] = useState(0)
+
+//   useEffect(() => {
+//     const interval = setInterval(() => {
+//       setIndex((prev) => (prev + 1) % buzzwords.length)
+//     }, 2000)
+//     return () => clearInterval(interval)
+//   }, [])
+
+//   return (
+//     <motion.h1
+//       className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 text-center md:text-left leading-tight mb-4"
+//       style={{ fontFamily: "var(--font-heading)" }}
+//       initial={{ opacity: 0, y: -20 }}
+//       animate={{ opacity: 1, y: 0 }}
+//       transition={{ delay: 0.2 }}
+//     >
+//       Wordywrites{" "}
+//       <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
+//         {buzzwords[index]}
+//       </span>{" "}
+      
+//     </motion.h1>
+//   )
+// }
+
+
+
 
 function AnimatedHeadline() {
   const [index, setIndex] = useState(0)
@@ -62,26 +92,51 @@ function AnimatedHeadline() {
   useEffect(() => {
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % buzzwords.length)
-    }, 2000)
+    }, 2600)
     return () => clearInterval(interval)
   }, [])
 
   return (
-    <motion.h1
-      className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 text-center md:text-left leading-tight mb-4"
-      style={{ fontFamily: "var(--font-heading)" }}
-      initial={{ opacity: 0, y: -20 }}
+    <motion.div
+      initial={{ opacity: 0, y: -16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
+      className="mb-4"
     >
-      Create{" "}
-      <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
+      {/* Primary headline */}
+      <h1
+        className="
+          font-heading
+          text-3xl sm:text-4xl md:text-5xl lg:text-6xl
+          font-semibold
+          tracking-tight
+          text-foreground
+          leading-tight
+        "
+      >
+        Blogs That Rank on Google
+      </h1>
+
+      {/* Animated proof line */}
+      <motion.div
+        key={index}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        className="
+          mt-2
+          text-lg sm:text-xl
+          font-medium
+          text-ai-accent
+        "
+      >
         {buzzwords[index]}
-      </span>{" "}
-      Blogs That Actually Perform
-    </motion.h1>
+      </motion.div>
+    </motion.div>
   )
 }
+
 
 function FeatureIcon({ icon: Icon, label, x, y, delay }: Feature) {
   return (
@@ -177,11 +232,23 @@ export default function Home() {
             >
               <Link href="/sign-up">
                 <Button
-                  variant="outline"
-                  className=" px-6 py-3 text-lg relative overflow-hidden border-2 border-transparent bg-white/80 backdrop-blur-sm  font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-300 hover:scale-105 hover:border-blue-400 shadow-md"
-                >
-                 Start Free
-                </Button>
+  className="
+    px-6 py-3 text-lg
+    font-medium
+    rounded-lg
+    bg-ai-accent
+    text-primary-foreground
+    shadow-[0_6px_18px_-6px_var(--ai-accent)]
+    transition-all duration-300
+    hover:shadow-[0_10px_30px_-6px_var(--ai-accent)]
+    hover:-translate-y-[1px]
+    focus-visible:ring-2
+    focus-visible:ring-ai-accent
+    focus-visible:ring-offset-2
+  "
+>
+  Start Free
+</Button>
               </Link>
             </motion.div>
           </motion.div>
