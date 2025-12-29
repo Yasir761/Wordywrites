@@ -61,7 +61,13 @@ export async function POST(req: NextRequest) {
           }
           user.credits -= 1;
           await user.save();
+          return NextResponse.json({
+            message: "Credit deducted",
+            creditsLeft: user.credits,
+});
         }
+
+        
 
         const result = await orchestratorHandler({ userId, keyword, crawlUrl });
 

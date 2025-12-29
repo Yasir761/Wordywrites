@@ -1,75 +1,47 @@
 
-// import { NextRequest, NextResponse } from "next/server";
+// import { NextRequest } from "next/server";
 // import { createPrompt } from "../prompt";
-// import { BlogOutputSchema } from "../schema";
-// import {
-//   isWithinTokenLimit,
-//   splitTextByTokenLimit,
-// } from "@/app/api/utils/tokenUtils";
-
 // import { connectDB } from "@/app/api/utils/db";
-// import { cachedAgent, deleteCacheKey } from "@/lib/cache";
-
 // import * as Sentry from "@sentry/nextjs";
+// import { BlogModel } from "@/app/models/blog";
 
-// const MAX_TOKENS = 2048;
 
-// // BLOG GENERATION LOGIC
-// async function generateBlog(
-//   keyword: string,
-//   outline: string,
-//   tone: string,
-//   seo: any,
-//   voice?: string
-// ) {
-//   return await Sentry.startSpan(
-//     { name: "Blog Agent Execution", op: "agent.blog" },
+
+// const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+
+// function getBaseUrl() {
+//   return process.env.APP_URL || "http://localhost:3000";
+// }
+
+
+
+
+
+
+// export async function POST(req: NextRequest) {
+//   return Sentry.startSpan(
+//     { name: "Blog Stream API", op: "api.stream" },
 //     async () => {
-//       Sentry.addBreadcrumb({
-//         category: "blog",
-//         message: "Blog agent started",
-//         level: "info",
-//         data: { keyword, tone, voice },
-//       });
+//       try {
+//         const body = await req.json();
+//         const { blogId, keyword, outline, tone, seo, voice } = body;
 
-//       const prompt = createPrompt({
-//         keyword,
-//         outline,
-//         tone,
-//         voice: voice || "",
-//         title: seo.optimized_title,
-//         meta: seo.meta_description,
-//       });
-
-//       Sentry.addBreadcrumb({
-//         category: "prompt",
-//         message: "Generated prompt for blog agent",
-//         level: "debug",
-//         data: { preview: prompt.slice(0, 200) },
-//       });
-
-//       if (!isWithinTokenLimit(prompt, MAX_TOKENS)) {
-//         Sentry.captureMessage("Prompt exceeded token limit", {
-//           level: "warning",
-//         });
-
-//         const chunks = splitTextByTokenLimit(prompt, MAX_TOKENS);
-//         if (!chunks.length) {
-//           throw new Error("Prompt too long and unsplittable");
+//         if (!blogId || !keyword || !outline || !seo) {
+//           return new Response("Missing required fields", { status: 400 });
 //         }
 
-//         throw new Error("Prompt exceeded token limit");
-//       }
+//         await connectDB();
 
-//       Sentry.addBreadcrumb({
-//         category: "openai",
-//         message: "Calling OpenAI for blog generation",
-//         level: "info",
-//       });
+//         const prompt = createPrompt({
+//           keyword,
+//           outline,
+//           tone: tone || "neutral",
+//           voice: voice || "",
+//           title: seo.optimized_title,
+//           meta: seo.meta_description,
+//         });
 
-//       const response = await fetch(
-//         "https://api.openai.com/v1/chat/completions",
-//         {
+//         const openaiRes = await fetch(OPENAI_URL, {
 //           method: "POST",
 //           headers: {
 //             Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -77,131 +49,125 @@
 //           },
 //           body: JSON.stringify({
 //             model: "gpt-4o-mini",
+//             stream: true,
+//             temperature: 0.5,
 //             messages: [
 //               {
 //                 role: "system",
 //                 content:
-//                   "You are a professional blog writer. Write clean, structured HTML with headings and lists. Avoid years like 2022/2023/2024; use timeless phrasing.",
+//                   "You are a professional blog writer. Write clean, structured HTML with headings and lists. Avoid years; use timeless phrasing.",
 //               },
 //               { role: "user", content: prompt },
 //             ],
-//             temperature: 0.5,
-//             max_tokens: MAX_TOKENS,
 //           }),
+//         });
+
+//         if (!openaiRes.ok || !openaiRes.body) {
+//           throw new Error("OpenAI streaming failed");
 //         }
-//       );
 
-//       if (!response.ok) {
-//         Sentry.captureMessage("OpenAI API failure", {
-//           level: "error",
-//           extra: { status: response.status },
-//         });
-//         throw new Error(`OpenAI API error: ${response.status}`);
-//       }
+//         const encoder = new TextEncoder();
+//         const decoder = new TextDecoder();
+//         let fullBlog = ""; // ACCUMULATE HERE
 
-//       const data = await response.json();
-//       const blog = data?.choices?.[0]?.message?.content?.trim();
+//         const stream = new ReadableStream({
+//           async start(controller) {
+//             const reader = openaiRes.body!.getReader();
 
-//       if (!blog) {
-//         Sentry.captureMessage("Empty blog returned from OpenAI", {
-//           level: "error",
-//         });
-//         throw new Error("OpenAI returned empty blog text");
-//       }
+//             try {
+//               while (true) {
+//                 const { value, done } = await reader.read();
+//                 if (done) break;
 
-//       console.log(" BLOG GENERATED | length:", blog.length);
+//                 const chunk = decoder.decode(value);
 
-//       const wordCount = blog.split(/\s+/).length;
+//                 for (const line of chunk.split("\n")) {
+//                   if (!line.startsWith("data:")) continue;
+//                   if (line.includes("[DONE]")) continue;
 
-//       const parsed = BlogOutputSchema.safeParse({
-//         blog,
-//         keyword,
-//         wordCount,
-//       });
+//                   try {
+//                     const json = JSON.parse(line.replace("data:", "").trim());
+//                     const token =
+//                       json.choices?.[0]?.delta?.content;
 
-//       if (!parsed.success) {
-//         Sentry.captureException(parsed.error, {
-//           tags: { stage: "schema-validation" },
-//         });
-//         throw new Error("Blog schema validation failed");
-//       }
+//                     if (token) {
+//                       fullBlog += token; //  track content
+//                       controller.enqueue(encoder.encode(token));
+//                     }
+//                   } catch {
+//                     // ignore malformed chunks
+//                   }
+//                 }
+//               }
 
-//       return {
-//         ...parsed.data,
-//         seo,
-//         wordCount,
-//       };
-//     }
-//   );
+              
+
+//               //  FINALIZE AFTER STREAM ENDS (BACKEND ONLY)
+//              const wordCount = fullBlog.split(/\s+/).length;
+
+
+//              if (!fullBlog.trim()) {
+//   throw new Error("Streaming completed but blog content is empty");
 // }
+// await BlogModel.updateOne(
+//   { _id: blogId },
+//   {
+//     $set: {
+//       "blogAgent.blog": fullBlog,
+//       "blogAgent.wordCount": wordCount,
+//       status: "generated",
+//     },
+//   }
+// );
 
-// // API ROUTE HANDLER
-// export async function POST(req: NextRequest) {
-//   return Sentry.startSpan(
-//     { name: "Blog Agent API Request", op: "api.post" },
-//     async () => {
-//       try {
-//         const body = await req.json();
-//         const { keyword, outline, tone, seo, voice, regenerate = false } = body;
+//               const previewRes = await fetch(
+//                 `${getBaseUrl()}/api/agents/contentpreview`,
+//                 {
+//                   method: "POST",
+//                   headers: { "Content-Type": "application/json" },
+//                   body: JSON.stringify({
+//                     title: seo.optimized_title,
+//                     content: fullBlog,
+//                   }),
+//                 }
+//               );
 
-//         const finalKeyword = keyword || "a trending topic";
-//         const finalTone = tone || "neutral";
-//         const finalOutline =
-//           outline || "1. Introduction\n2. Key Points\n3. Conclusion";
+//               if (previewRes.ok) {
+//                 const preview = await previewRes.json();
+//                 await BlogModel.updateOne(
+//                   { _id: blogId },
+//                   {
+//                     $set: {
+//                       contentPreviewAgent: preview,
+//                       status: "completed",
+//                     },
+//                   }
+//                 );
+//               }
+//             } catch (err) {
+//               Sentry.captureException(err);
+//               controller.error(err);
+//             }finally  {
+//             controller.close();
+//           }
+//           },
+//         });
 
-//         const finalSeo = {
-//           optimized_title:
-//             seo?.optimized_title || `Blog about ${finalKeyword}`,
-//           meta_description:
-//             seo?.meta_description ||
-//             `Explore essential insights about ${finalKeyword}.`,
-//           seo_score:
-//             typeof seo?.seo_score === "number" ? seo.seo_score : 50,
-//         };
-
-//         await connectDB();
-
-//         const cacheKey = `agent:blog:${finalKeyword
-//           .toLowerCase()
-//           .slice(0, 50)}:${finalTone.toLowerCase()}:${finalSeo.optimized_title
-//           .toLowerCase()
-//           .slice(0, 50)}`;
-
-//         if (regenerate) {
-//           Sentry.addBreadcrumb({
-//             category: "cache",
-//             message: "Regenerate requested — clearing cache",
-//             level: "info",
-//             data: { cacheKey },
-//           });
-//           await deleteCacheKey(cacheKey);
-//         }
-
-//         const result = await cachedAgent(
-//           cacheKey,
-//           () =>
-//             generateBlog(
-//               finalKeyword,
-//               finalOutline,
-//               finalTone,
-//               finalSeo,
-//               voice
-//             ),
-//           60 * 60 * 24 // 24 hours
-//         );
-
-//         console.log(" BLOG AGENT RESPONSE SENT");
-
-//         return NextResponse.json(result);
+//         return new Response(stream, {
+//           headers: {
+//             "Content-Type": "text/plain; charset=utf-8",
+//             "Transfer-Encoding": "chunked",
+//             "Cache-Control": "no-store",
+//           },
+//         });
 //       } catch (err) {
 //         Sentry.captureException(err);
-//         const message =
-//           err instanceof Error ? err.message : "Internal server error";
-//         return NextResponse.json({ error: message }, { status: 500 });
+//         return new Response("Streaming failed", { status: 500 });
 //       }
 //     }
 //   );
 // }
+
 
 
 
@@ -215,8 +181,6 @@ import { createPrompt } from "../prompt";
 import { connectDB } from "@/app/api/utils/db";
 import * as Sentry from "@sentry/nextjs";
 import { BlogModel } from "@/app/models/blog";
-
-// export const runtime = "edge";
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
@@ -243,7 +207,7 @@ export async function POST(req: NextRequest) {
           outline,
           tone: tone || "neutral",
           voice: voice || "",
-          title: seo.optimized_title,
+          title: seo.optimized_title || keyword,
           meta: seo.meta_description,
         });
 
@@ -274,7 +238,7 @@ export async function POST(req: NextRequest) {
 
         const encoder = new TextEncoder();
         const decoder = new TextDecoder();
-        let fullBlog = ""; // ✅ ACCUMULATE HERE
+        let fullBlog = "";
 
         const stream = new ReadableStream({
           async start(controller) {
@@ -286,18 +250,16 @@ export async function POST(req: NextRequest) {
                 if (done) break;
 
                 const chunk = decoder.decode(value);
-
                 for (const line of chunk.split("\n")) {
                   if (!line.startsWith("data:")) continue;
-                  if (line.includes("[DONE]")) break;
+                  if (line.includes("[DONE]")) continue;
 
                   try {
                     const json = JSON.parse(line.replace("data:", "").trim());
-                    const token =
-                      json.choices?.[0]?.delta?.content;
+                    const token = json.choices?.[0]?.delta?.content;
 
                     if (token) {
-                      fullBlog += token; // ✅ track content
+                      fullBlog += token;
                       controller.enqueue(encoder.encode(token));
                     }
                   } catch {
@@ -306,21 +268,49 @@ export async function POST(req: NextRequest) {
                 }
               }
 
-              controller.close();
+              if (!fullBlog.trim()) {
+                throw new Error("Streaming completed but blog content is empty");
+              }
 
-              // ✅ FINALIZE AFTER STREAM ENDS (BACKEND ONLY)
-             const wordCount = fullBlog.split(/\s+/).length;
+              const wordCount = fullBlog.split(/\s+/).length;
 
-await BlogModel.updateOne(
-  { _id: blogId },
-  {
-    $set: {
-      "blogAgent.blog": fullBlog,
-      "blogAgent.wordCount": wordCount,
-      status: "generated",
-    },
-  }
-);
+              await BlogModel.updateOne(
+                { _id: blogId },
+                {
+                  $set: {
+                    "blogAgent.blog": fullBlog,
+                    "blogAgent.wordCount": wordCount,
+                    status: "generated",
+                  },
+                }
+              );
+
+              // 🔐 SAFE TITLE FALLBACK
+              const title =
+                seo?.optimized_title?.trim() ||
+                keyword?.trim() ||
+                "";
+
+              if (!title || !fullBlog.trim()) {
+                Sentry.captureMessage("Skipping content preview generation", {
+                  level: "warning",
+                  extra: {
+                    titlePresent: Boolean(title),
+                    blogLength: fullBlog.length,
+                  },
+                });
+                return;
+              }
+
+              Sentry.addBreadcrumb({
+                category: "content-preview",
+                message: "Calling content preview",
+                level: "info",
+                data: {
+                  title: title.slice(0, 80),
+                  blogLength: fullBlog.length,
+                },
+              });
 
               const previewRes = await fetch(
                 `${getBaseUrl()}/api/agents/contentpreview`,
@@ -328,7 +318,7 @@ await BlogModel.updateOne(
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    title: seo.optimized_title,
+                    title,
                     content: fullBlog,
                   }),
                 }
@@ -340,15 +330,22 @@ await BlogModel.updateOne(
                   { _id: blogId },
                   {
                     $set: {
-                      ContentPreviewAgent: preview,
+                      contentPreviewAgent: preview,
                       status: "completed",
                     },
                   }
                 );
+              } else {
+                Sentry.captureMessage("Content preview API failed", {
+                  level: "error",
+                  extra: { status: previewRes.status },
+                });
               }
             } catch (err) {
               Sentry.captureException(err);
               controller.error(err);
+            } finally {
+              controller.close();
             }
           },
         });

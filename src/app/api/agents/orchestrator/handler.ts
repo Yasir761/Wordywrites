@@ -16,7 +16,7 @@ const AGENT_ENDPOINTS = {
   hashtags: "/api/agents/hashtags",
   seo: "/api/agents/seo-optimizer",
   blog: "/api/agents/blog",
-  contentpreview: "/api/agents/contentpreview",
+  // contentpreview: "/api/agents/contentpreview",
 };
 
 function getBaseUrl() {
@@ -91,7 +91,7 @@ const jobId = Date.now(); // simple, works
     blueprint: `agent:blueprint:${keyword}`,
     seo: `agent:seo:${keyword}`,
     blog: `agent:blog:${keyword}:${jobId}`,
-    contentpreview: `agent:contentpreview:${keyword}`,
+    // contentpreview: `agent:contentpreview:${keyword}`,
   };
 
   //  Prefetch Redis cache
@@ -230,7 +230,7 @@ const blog = {
     blueprint,
     seo,
     blog,
-    contentpreview: null, // preview,
+    // contentpreview: preview, 
   };
 
   Object.keys(keys).forEach((agent, i) => {
@@ -267,6 +267,7 @@ const blogDoc = await BlogModel.create({
   analyzeAgent: analyze,
   crawlAgent: crawl,
   status: "streaming",
+
 });
   //  Cache summary
   console.log("\n CACHE STATUS SUMMARY:");
@@ -302,6 +303,7 @@ const blogDoc = await BlogModel.create({
   hashtags: tagsData.tags || tagsData,
   analyze,
   blueprint,
+  // contentpreview: preview,
 };
 }
  
