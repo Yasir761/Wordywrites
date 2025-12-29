@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { orchestratorHandler } from "./handler";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { UserModel } from "@/app/models/user";
 import { connectDB } from "../../utils/db";
 import * as Sentry from "@sentry/nextjs";
@@ -42,10 +42,23 @@ export async function POST(req: NextRequest) {
         }
 
         let user = await UserModel.findOne({ userId });
-       if (!user) {
+
+if (!user) {
+  const clerkUser = await currentUser();
+
+  const email =
+    clerkUser?.emailAddresses?.[0]?.emailAddress;
+
+  if (!email) {
+    return NextResponse.json(
+      { error: "Unable to determine user email" },
+      { status: 400 }
+    );
+  }
+
   user = await UserModel.create({
     userId,
-    email: "",
+    email,
     plan: "Free",
     credits: 5,
     createdAt: new Date(),
