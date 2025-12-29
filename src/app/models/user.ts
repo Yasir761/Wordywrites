@@ -1,3 +1,4 @@
+import { Users } from "lucide-react";
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema({
@@ -18,4 +19,4 @@ const UserSchema = new mongoose.Schema({
 UserSchema.index({ userId: 1, plan: 1 });
 // UserSchema.index({ paddleSubscriptionId: 1 }, { unique: true, sparse: true });
 
-export const UserModel = mongoose.models.User || mongoose.model("User", UserSchema);
+export const UserModel = mongoose.models.User || mongoose.model("User", UserSchema, "users");
