@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { orchestratorHandler } from "./handler";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { UserModel } from "@/app/models/user";
 import { connectDB } from "../../utils/db";
 import * as Sentry from "@sentry/nextjs";
@@ -13,6 +13,12 @@ export async function POST(req: NextRequest) {
     async () => {
       try {
         const { userId } = await auth();
+        Sentry.addBreadcrumb({
+  category: "auth",
+  message: "Auth result",
+  level: "info",
+  data: { userId },
+});
 
         if (!userId) {
           return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -41,29 +47,10 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        let user = await UserModel.findOne({ userId });
-
-if (!user) {
-  const clerkUser = await currentUser();
-
-  const email =
-    clerkUser?.emailAddresses?.[0]?.emailAddress;
-
-  if (!email) {
-    return NextResponse.json(
-      { error: "Unable to determine user email" },
-      { status: 400 }
-    );
-  }
-
-  user = await UserModel.create({
-    userId,
-    email,
-    plan: "Free",
-    credits: 5,
-    createdAt: new Date(),
-  });
-}
+        const user = await UserModel.findOne({ userId });
+        if (!user) {
+          return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
 
         if (user.plan === "Free") {
           if (user.credits <= 0) {
