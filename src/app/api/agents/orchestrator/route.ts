@@ -41,10 +41,16 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        const user = await UserModel.findOne({ userId });
-        if (!user) {
-          return NextResponse.json({ error: "User not found" }, { status: 404 });
-        }
+        let user = await UserModel.findOne({ userId });
+       if (!user) {
+  user = await UserModel.create({
+    userId,
+    email: "",
+    plan: "Free",
+    credits: 5,
+    createdAt: new Date(),
+  });
+}
 
         if (user.plan === "Free") {
           if (user.credits <= 0) {
