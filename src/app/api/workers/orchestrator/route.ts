@@ -26,18 +26,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
 
-      // Credit enforcement
-      if (user.plan === "Free") {
-        if (user.credits <= 0) {
-          return NextResponse.json(
-            { error: "You are out of free credits. Upgrade to continue." },
-            { status: 402 }
-          );
-        }
-
-        user.credits -= 1;
-        await user.save();
-      }
+     
 
       // Run orchestrator
       await orchestratorHandler({ userId, keyword, crawlUrl });

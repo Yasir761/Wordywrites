@@ -13,6 +13,12 @@ export async function POST(req: NextRequest) {
     async () => {
       try {
         const { userId } = await auth();
+        Sentry.addBreadcrumb({
+  category: "auth",
+  message: "Auth result",
+  level: "info",
+  data: { userId },
+});
 
         if (!userId) {
           return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -55,7 +61,13 @@ export async function POST(req: NextRequest) {
           }
           user.credits -= 1;
           await user.save();
+          return NextResponse.json({
+            message: "Credit deducted",
+            creditsLeft: user.credits,
+});
         }
+
+        
 
         const result = await orchestratorHandler({ userId, keyword, crawlUrl });
 

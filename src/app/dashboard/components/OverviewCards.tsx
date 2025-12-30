@@ -210,11 +210,11 @@ export default function OverviewCards() {
               <Badge className="px-2 py-0.5 text-[10px]">...</Badge>
             ) : planData?.plan === "Free" ? (
               <Badge className="px-2 py-0.5 text-[10px] border border-yellow-500/20 bg-yellow-500/10 text-yellow-400">
-                {planData.blogsLeft} generated left
+                {planData.creditsLeft} credit left
               </Badge>
             ) : (
               <Badge className="px-2 py-0.5 text-[10px] border border-ai-accent/40 bg-ai-accent/10 text-ai-accent">
-                ⭐ PRO MEMBER
+                 PRO MEMBER
               </Badge>
             )}
           </div>

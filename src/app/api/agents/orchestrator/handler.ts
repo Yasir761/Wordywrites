@@ -16,7 +16,7 @@ const AGENT_ENDPOINTS = {
   hashtags: "/api/agents/hashtags",
   seo: "/api/agents/seo-optimizer",
   blog: "/api/agents/blog",
-  // contentpreview: "/api/agents/contentpreview",
+  
 };
 
 function getBaseUrl() {
@@ -52,7 +52,7 @@ export async function orchestratorHandler({
     }
   }
 
-  // 3️ Clerk user lookup (with fallback email)
+  //  Clerk user lookup (with fallback email)
   let email = "system@wordywrites.ai";
   try {
     const user = await clerkClient.users.getUser(userId);
@@ -91,7 +91,7 @@ const jobId = Date.now(); // simple, works
     blueprint: `agent:blueprint:${keyword}`,
     seo: `agent:seo:${keyword}`,
     blog: `agent:blog:${keyword}:${jobId}`,
-    // contentpreview: `agent:contentpreview:${keyword}`,
+    
   };
 
   //  Prefetch Redis cache
@@ -135,27 +135,6 @@ const jobId = Date.now(); // simple, works
   };
 
 
-
-//   const res = await fetch(`${baseUrl}${AGENT_ENDPOINTS[agent]}`, {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify(body),
-//   });
-
-//   const text = await res.text();
-
-//   if (!res.ok) {
-//     throw new Error(
-//       `Agent ${agent} failed (${res.status}): ${text.slice(0, 120)}`
-//     );
-//   }
-
-//   try {
-//     return JSON.parse(text);
-//   } catch {
-//     throw new Error(`Agent ${agent} returned non-JSON response`);
-//   }
-// };
 
   //  Cache retrieval or regeneration
   async function getOrGenerate(
@@ -201,22 +180,13 @@ const seo = await getOrGenerate(5, "seo", {
   const finalOutline =
     blueprint?.outline || (Array.isArray(keywordData?.outline) ? keywordData.outline : []);
 
-  // const blog = await getOrGenerate(6, "blog", {
-  //   keyword,
-  //   outline: finalOutline,
-  //   tone: tone.tone,
-  //   seo,
-  // });
 
   // Do NOT generate blog text here
 const blog = {
   keyword,
   blog: "", // filled by stream
 };
-  // const preview = await getOrGenerate(7, "contentpreview", {
-  //   title: seo.optimized_title || keyword,
-  //   content: blog.blog || "",
-  // });
+
 
   const crawl = crawlUrl ? await callAgent("crawl", { url: crawlUrl }) : null;
 
@@ -230,7 +200,7 @@ const blog = {
     blueprint,
     seo,
     blog,
-    // contentpreview: preview,
+     
   };
 
   Object.keys(keys).forEach((agent, i) => {
@@ -244,19 +214,7 @@ const blog = {
   console.timeEnd(" REDIS_PIPELINE_SET");
 
   //  Save results to DB
-  // const blogDoc = await BlogModel.create({
-  //   userId,
-  //   keywordAgent: { keyword, intent: keywordData.intent },
-  //   toneAgent: tone,
-  //   blueprintAgent: blueprint,
-  //   seoAgent: seo,
-  //   blogAgent: blog,
-  //   analyzeAgent: analyze,
-  //   crawlAgent: crawl,
-  //   // ContentPreviewAgent: preview,
-  //   status: "draft",
-  //   createdAt: new Date(),
-  // });
+
 const blogDoc = await BlogModel.create({
   userId,
   keywordAgent: { keyword, intent: keywordData.intent },
@@ -267,6 +225,7 @@ const blogDoc = await BlogModel.create({
   analyzeAgent: analyze,
   crawlAgent: crawl,
   status: "streaming",
+
 });
   //  Cache summary
   console.log("\n CACHE STATUS SUMMARY:");
@@ -280,19 +239,7 @@ const blogDoc = await BlogModel.create({
 
 
 
-  // return {
-  //   keyword,
-  //   seo,
-  //   blog: blog.blog || "",
-  //   // contentpreview: preview,
-  //   tone,
-  //   hashtags: tagsData.tags || tagsData,
-  //   analyze,
-  //   blueprint,
-  //   blogId: blogDoc._id.toString(),
-  // };
-
-
+  
 
   return {
   blogId: blogDoc._id.toString(),
@@ -302,6 +249,7 @@ const blogDoc = await BlogModel.create({
   hashtags: tagsData.tags || tagsData,
   analyze,
   blueprint,
+
 };
 }
  

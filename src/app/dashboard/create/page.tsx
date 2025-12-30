@@ -231,6 +231,28 @@ if (!orchestratorRes.ok) {
 );
 
 
+// Fetch content preview AFTER blog generation
+const previewRes = await fetch("/api/agents/contentpreview", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    blogId: orchestratorData.blogId,
+  }),
+});
+
+if (previewRes.ok) {
+  const previewData = await previewRes.json();
+
+  setBlogData(prev =>
+    prev
+      ? {
+          ...prev,
+          contentpreview: previewData.contentpreview,
+        }
+      : prev
+  );
+}
+
 
     showToast({
       type: "success",
