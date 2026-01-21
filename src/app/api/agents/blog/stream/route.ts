@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 import { NextRequest } from "next/server";
 import { createPrompt } from "../prompt";
 import { connectDB } from "@/app/api/utils/db";
