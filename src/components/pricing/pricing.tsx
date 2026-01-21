@@ -10,10 +10,11 @@ import { useAuth } from "@clerk/nextjs";
 const PRO_PRICE_ID = "pri_01k3amkh5jpxnsb12by5ae99fw";
 
 const freeFeatures = [
-  "Keyword Agent",
-  "Outline Agent",
-  "5 Blogs / month",
-];
+  'Try Wordywrites with 5 free credits. Upgrade anytime for unlimited writing.',
+  "Access to basic AI writing agent for blog creation.",
+  "Publish directly to WordPress with our integration.",
+  "Generate SEO-optimized content outlines.",
+  "Basic tone and style customization options.",];
 
 const proFeatures = [
   "Unlimited Blog Writing",
@@ -111,57 +112,59 @@ export default function Pricing() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
-        {/* FREE PLAN */}
-        <div className="relative rounded-3xl border border-gray-200/70 bg-white/80 backdrop-blur-sm p-6 sm:p-7 shadow-sm hover:shadow-lg transition-all duration-300">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-left">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
-                Free
-              </h3>
-              <p className="mt-1 text-xs uppercase tracking-wide text-gray-400">
-                Best for trying Wordywrites
-              </p>
-            </div>
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-              No card needed
-            </span>
-          </div>
+       
 
-          <div className="mt-4 flex items-baseline gap-1 text-gray-900">
-            <span className="text-3xl sm:text-4xl font-bold">$0</span>
-            <span className="text-xs sm:text-sm text-gray-500">/month</span>
-          </div>
+{/* FREE PLAN */}
+<div className="relative rounded-3xl border border-gray-200/70 bg-white/80 backdrop-blur-sm p-6 sm:p-7 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col">
+  <div className="flex items-center justify-between gap-3">
+    <div className="text-left">
+      <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
+        Free
+      </h3>
+      <p className="mt-1 text-xs uppercase tracking-wide text-gray-400">
+        Best for trying Wordywrites
+      </p>
+    </div>
+    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+      No card needed
+    </span>
+  </div>
 
-          <p className="mt-3 text-sm text-gray-600">
-            Perfect for exploring the workflow and shipping your first posts.
-          </p>
+  <div className="mt-4 flex items-baseline gap-1 text-gray-900">
+    <span className="text-3xl sm:text-4xl font-bold">$0</span>
+    <span className="text-xs sm:text-sm text-gray-500">/month</span>
+  </div>
 
-          <ul className="mt-6 space-y-3 text-left text-sm">
-            {freeFeatures.map((feature) => (
-              <li
-                key={feature}
-                className="flex items-center gap-2 text-gray-700"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-50">
-                  <Check className="h-3.5 w-3.5 text-green-600" />
-                </span>
-                {feature}
-              </li>
-            ))}
-          </ul>
+  <p className="mt-3 text-sm text-gray-600">
+    Perfect for exploring the workflow and shipping your first posts.
+  </p>
 
-          <Button
-            className="mt-6 w-full rounded-full text-sm font-semibold"
-            variant="outline"
-            onClick={() =>
-              isSignedIn
-                ? (window.location.href = "/dashboard")
-                : (window.location.href = "/sign-up")
-            }
-          >
-            Start for Free
-          </Button>
-        </div>
+  <ul className="mt-6 space-y-3 text-left text-sm flex-1">
+    {freeFeatures.map((feature) => (
+      <li
+        key={feature}
+        className="flex items-center gap-2 text-gray-700"
+      >
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-50">
+          <Check className="h-3.5 w-3.5 text-green-600" />
+        </span>
+        {feature}
+      </li>
+    ))}
+  </ul>
+
+  <Button
+    className="mt-6 w-full rounded-full text-sm font-semibold"
+    variant="outline"
+    onClick={() =>
+      isSignedIn
+        ? (window.location.href = "/dashboard")
+        : (window.location.href = "/sign-up")
+    }
+  >
+    Start for Free
+  </Button>
+</div>
 
         {/* PRO PLAN */}
         <div className="relative rounded-3xl border border-indigo-500/70 bg-gradient-to-b from-indigo-600 to-indigo-700 p-[1px] shadow-md shadow-indigo-200/80">
