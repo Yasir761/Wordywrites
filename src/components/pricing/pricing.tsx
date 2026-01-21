@@ -130,10 +130,14 @@ export default function Pricing() {
     </span>
   </div>
 
-  <div className="mt-4 flex items-baseline gap-1 text-gray-900">
-    <span className="text-3xl sm:text-4xl font-bold">$0</span>
-    <span className="text-xs sm:text-sm text-gray-500">/month</span>
+  <div className="mt-4">
+  <div className="text-3xl sm:text-4xl font-bold text-gray-900">
+    Free Trial
   </div>
+  <p className="mt-1 text-xs sm:text-sm text-gray-500">
+    Includes 5 credits
+  </p>
+</div>
 
   <p className="mt-3 text-sm text-gray-600">
     Perfect for exploring the workflow and shipping your first posts.

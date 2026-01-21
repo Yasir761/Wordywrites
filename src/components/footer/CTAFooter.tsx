@@ -59,7 +59,7 @@ export default function CTAAndFooter() {
   ]
 
   return (
-    <footer className="mt-24">
+    <footer className="mt-24 pb-24 sm:pb-0">
       {/* CTA Section */}
       <motion.section
         initial={{ opacity: 0, y: 40 }}
@@ -268,28 +268,29 @@ export default function CTAAndFooter() {
             className="flex flex-col sm:flex-row items-center justify-between gap-6"
           >
             {/* Social Icons */}
-            <div className="flex gap-6">
-              {socialLinks.map((social, i) => {
-                const Icon = social.icon
-                return (
-                  <motion.div
-                    key={i}
-                    whileHover={{ scale: 1.2, y: -4 }}
-                    transition={{ type: 'spring', stiffness: 400 }}
-                  >
-                    <Link
-                      href={social.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-3 rounded-full bg-gray-100 hover:bg-indigo-100 text-gray-600 hover:text-indigo-600 transition-all duration-300"
-                      aria-label={social.label}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </Link>
-                  </motion.div>
-                )
-              })}
-            </div>
+            <div className="flex items-center gap-4 ">
+  {socialLinks.map((social, i) => {
+    const Icon = social.icon
+    return (
+      <motion.div
+        key={i}
+        whileHover={{ scale: 1.1 }}
+        transition={{ type: "spring", stiffness: 300 }}
+      >
+        <Link
+          href={social.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-600 hover:text-indigo-600 transition-colors duration-300"
+          aria-label={social.label}
+        >
+          <Icon className="w-5 h-5" />
+        </Link>
+      </motion.div>
+    )
+  })}
+</div>
+
 
             {/* Copyright Text */}
             <div className="text-center sm:text-right text-xs sm:text-sm text-gray-500">
