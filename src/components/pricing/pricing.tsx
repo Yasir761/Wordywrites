@@ -10,28 +10,74 @@ import { useAuth } from "@clerk/nextjs";
 const PRO_PRICE_ID = "pri_01k3amkh5jpxnsb12by5ae99fw";
 
 const freeFeatures = [
-  'Try Wordywrites with 5 free credits. Upgrade anytime for unlimited writing.',
-  "Access to basic AI writing agent for blog creation.",
-  "Publish directly to WordPress with our integration.",
-  "Generate SEO-optimized content outlines.",
-  "Basic tone and style customization options.",];
+  {
+    title: "5 free credits",
+    desc: "Try Wordywrites with 5 free blog credits.",
+  },
+  {
+    title: "Basic blog writer",
+    desc: "Generate blog content with essential AI writing.",
+  },
+  {
+    title: "SEO outline",
+    desc: "Create structured outlines optimized for SEO.",
+  },
+  {
+    title: "Tone & style settings",
+    desc: "Basic tone customization for your writing.",
+  },
+  {
+    title: "WordPress publishing",
+    desc: "Publish directly to WordPress from the app.",
+  },
+];
 
 const proFeatures = [
-  "Unlimited Blog Writing",
-  "Keyword Agent",
-  "Outline Agent",
-  "SEO Agent",
-  "Tone Agent",
-  "Hashtag Agent",
-  "Analyze Agent",
-  "Crawl Agent",
-  "Publish to WordPress",
-  "Copy for Medium",
+  {
+    title: "Unlimited blog generation",
+    desc: "Generate as many blogs as you want.",
+  },
+  {
+    title: "Keyword research + intent",
+    desc: "Find high-intent keywords for your niche.",
+  },
+  {
+    title: "Advanced outline generator",
+    desc: "Detailed blueprint with headings and structure.",
+  },
+  {
+    title: "SEO optimization",
+    desc: "Improve titles, headings & on-page SEO automatically.",
+  },
+  {
+    title: "Tone & audience control",
+    desc: "Adapt tone for casual, professional, and more.",
+  },
+  {
+    title: "Hashtags + social snippets",
+    desc: "Generate hashtags and promotion-ready snippets.",
+  },
+  {
+    title: "Competitor / SERP analysis",
+    desc: "Understand what’s ranking and why.",
+  },
+  {
+    title: "Crawl your WordPress blog",
+    desc: "Analyze your existing posts & learn your style.",
+  },
+  {
+    title: "1-click WordPress publishing",
+    desc: "Publish blogs instantly with formatting ready.",
+  },
+  {
+    title: "Copy-ready export for Medium",
+    desc: "Fast repurpose workflow for Medium publishing.",
+  },
 ];
 
 export default function Pricing() {
   const [paddle, setPaddle] = useState<Paddle>();
-  const [localPrice, setLocalPrice] = useState<string>("$9.99/mo");
+  const [localPrice, setLocalPrice] = useState<string>("$9.99");
   const { isSignedIn } = useAuth();
 
   // Fetch Paddle localized price
@@ -41,7 +87,7 @@ export default function Pricing() {
         const res = await fetch(`/api/paddle/price?priceId=${PRO_PRICE_ID}`);
         const data = await res.json();
         if (data?.formatted) {
-          setLocalPrice(`${data.formatted}/mo`);
+          setLocalPrice(`${data.formatted}`);
         }
       } catch (e) {
         console.error("Price fetch failed", e);
@@ -143,19 +189,23 @@ export default function Pricing() {
     Perfect for exploring the workflow and shipping your first posts.
   </p>
 
-  <ul className="mt-6 space-y-3 text-left text-sm flex-1">
-    {freeFeatures.map((feature) => (
-      <li
-        key={feature}
-        className="flex items-center gap-2 text-gray-700"
-      >
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-50">
-          <Check className="h-3.5 w-3.5 text-green-600" />
-        </span>
-        {feature}
-      </li>
-    ))}
-  </ul>
+ <ul className="mt-6 space-y-4 text-left text-sm flex-1">
+  {freeFeatures.map((feature) => (
+    <li key={feature.title} className="flex items-start gap-3 text-gray-700">
+      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-50">
+        <Check className="h-3.5 w-3.5 text-green-600" />
+      </span>
+
+      <div className="leading-snug">
+        <p className="font-medium text-gray-900">{feature.title}</p>
+        <p className="text-xs text-gray-500">{feature.desc}</p>
+      </div>
+    </li>
+  ))}
+</ul>
+
+
+
 
   <Button
     className="mt-6 w-full rounded-full text-sm font-semibold"
@@ -191,27 +241,29 @@ export default function Pricing() {
               </span>
             </div>
 
-            <div className="mt-4 flex items-baseline gap-1 text-gray-900">
-              <span className="text-3xl sm:text-4xl font-bold">
-                {localPrice}
-              </span>
-            </div>
+            <div className="mt-4 flex items-end gap-2">
+  <span className="text-4xl font-bold">{localPrice}</span>
+  <span className="text-sm text-gray-500 mb-1">/month</span>
+</div>
 
             <p className="mt-3 text-sm text-gray-600">
-              Unlock every AI agent, unlimited blogs, and direct publishing
-              workflows.
+              Unlock all premium features, unlimited blog generation, and direct publishing workflows
             </p>
 
-            <ul className="mt-6 space-y-3 text-left text-sm flex-1">
+            <ul className="mt-6 space-y-4 text-left text-sm flex-1">
               {proFeatures.map((feature) => (
                 <li
-                  key={feature}
-                  className="flex items-center gap-2 text-gray-700"
+                  key={feature.title}
+                  className="flex items-start gap-3 text-gray-700"
                 >
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-50">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-50">
+
                     <Check className="h-3.5 w-3.5 text-green-600" />
                   </span>
-                  {feature}
+                  <div className="leading-snug">
+                    <p className="font-medium text-gray-900">{feature.title}</p>
+                    <p className="text-xs text-gray-500">{feature.desc}</p>
+                  </div>
                 </li>
               ))}
             </ul>
