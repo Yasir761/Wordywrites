@@ -113,7 +113,7 @@ export default function CTAAndFooter() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Button className="w-full sm:w-auto text-white px-8 py-3 rounded-full font-semibold bg-white text-indigo-600 hover:bg-indigo-50 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <Button className="w-full sm:w-auto px-8 py-3 rounded-full font-semibold bg-white text-indigo-600 hover:bg-indigo-50 shadow-lg hover:shadow-xl transition-all duration-300">
                       Get Started Free
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
