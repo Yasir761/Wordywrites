@@ -97,13 +97,14 @@ export function HowItWorks() {
             <div className="relative w-full bg-gradient-to-br from-gray-900 to-gray-800 aspect-video flex items-center justify-center overflow-hidden">
               {/* Embedded Video - Replace with your video URL */}
               {showVideo ? (
-                <iframe
-                  src="/demo.mp4"
-                  title="WordyWrites Demo"
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+              <video
+  src="/demo.mp4"
+  className="w-full h-full object-cover"
+  autoPlay
+  muted
+  loop
+  playsInline
+/>
               ) : (
                 <>
                   {/* Video Thumbnail/Poster */}
@@ -132,13 +133,13 @@ export function HowItWorks() {
             </div>
 
             {/* Video Info Badge */}
-            {!showVideo && (
+            {/* {!showVideo && (
               <div className="absolute top-4 right-4 z-20 flex gap-2">
                 <div className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm text-xs sm:text-sm font-medium text-gray-900 shadow-lg">
                   2:45 min
                 </div>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* Video Description */}
