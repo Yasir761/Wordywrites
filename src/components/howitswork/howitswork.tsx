@@ -132,14 +132,7 @@ export function HowItWorks() {
               )}
             </div>
 
-            {/* Video Info Badge */}
-            {/* {!showVideo && (
-              <div className="absolute top-4 right-4 z-20 flex gap-2">
-                <div className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm text-xs sm:text-sm font-medium text-gray-900 shadow-lg">
-                  2:45 min
-                </div>
-              </div>
-            )} */}
+           
           </div>
 
           {/* Video Description */}
