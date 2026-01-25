@@ -8,8 +8,10 @@ declare global {
 
 export const pageview = (url: string) => {
   if (!window.gtag) return;
+
   window.gtag("config", GA_ID, {
     page_path: url,
+    debug_mode: true, //  optional but useful in dev
   });
 };
 
@@ -18,5 +20,9 @@ export const event = (
   params?: Record<string, any>
 ) => {
   if (!window.gtag) return;
-  window.gtag("event", action, params);
+
+  window.gtag("event", action, {
+    debug_mode: true,  //  optional but useful in dev
+    ...params,
+  });
 };
