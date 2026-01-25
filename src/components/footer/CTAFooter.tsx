@@ -211,12 +211,7 @@ export default function CTAAndFooter() {
                     <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </Link>
                 </motion.div>
-                <motion.div whileHover={{ x: 4 }} transition={{ duration: 0.2 }}>
-                  <Link href="mailto:hello@wordywrites.com" className="text-gray-600 hover:text-indigo-600 transition-colors duration-300 text-sm font-medium flex items-center gap-2 group">
-                    Support
-                    <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </Link>
-                </motion.div>
+             
               </div>
             </motion.div>
 
