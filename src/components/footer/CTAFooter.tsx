@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { X, Github, Globe, ArrowRight, Mail, CheckCircle } from 'lucide-react'
+import { X, Globe, ArrowRight, Mail, CheckCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function CTAAndFooter() {
@@ -54,7 +54,7 @@ export default function CTAAndFooter() {
 
   const socialLinks = [
     { icon: X, href: 'https://x.com/Mohd_Yasir29', label: 'Twitter' },
-    { icon: Github, href: 'https://github.com/Yasir761', label: 'GitHub' },
+   
     { icon: Globe, href: 'https://codilad.dev', label: 'Website' },
   ]
 
@@ -233,7 +233,7 @@ export default function CTAAndFooter() {
                 Newsletter
               </p>
               <p className="text-gray-600 text-sm leading-relaxed">
-                Stay updated with the latest features and blogging tips.
+                Short notes from building WordyWrites in public — product decisions, mistakes, and growth experiments.
               </p>
               <div className="flex flex-col gap-2">
                 <Input
@@ -250,7 +250,7 @@ export default function CTAAndFooter() {
                   disabled={loading}
                   className="rounded-full text-white px-5 py-2.5 w-full text-sm font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all duration-300 shadow-sm hover:shadow-md"
                 >
-                  {loading ? "Subscribing..." : "Subscribe"}
+                  {loading ? "Joining..." : "Get the weekly notes"}
                 </motion.button>
               </div>
             </motion.div>
