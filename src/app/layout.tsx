@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "next-themes"
 
 import "./globals.css"
+import PageViewTracker from "@/components/analytics/PageViewTracker"
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -70,6 +71,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             disableTransitionOnChange
           >
             <SWRProvider>
+              <PageViewTracker />
+          
               <ClientOnly>
                 {children}
                 <Toaster position="top-right" />

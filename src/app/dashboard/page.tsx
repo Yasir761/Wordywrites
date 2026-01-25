@@ -6,10 +6,21 @@ import RecentBlogs from "./components/RecentBlogs";
 import SmartTools from "./components/SmartTools";
 import AIAgentsPanel from "./components/AiAgents";
 import HeroValueBanner from "./components/HeroValueBanner";
-
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 
+
 export default function DashboardPage() {
+  useEffect(() => {
+  if (localStorage.getItem("signup_tracked")) return;
+
+  if (window.gtag) {
+    window.gtag("event", "signup_complete", {
+      method: "email",
+    });
+    localStorage.setItem("signup_tracked", "true");
+  }
+}, []);
   return (
     <div className="px-4 xl:px-8 pb-24 space-y-20">
       
