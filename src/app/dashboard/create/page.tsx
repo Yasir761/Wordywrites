@@ -8,6 +8,8 @@ import TeaserSection from "@/app/dashboard/components/TeaserSection";
 import { LocalErrorBoundary } from "../components/LocalErrorBoundary";
 import { showToast } from "@/lib/toast";
 import { marked } from "marked";
+import * as gtag from "@/lib/gtag";
+
 
 
 marked.setOptions({
@@ -229,6 +231,13 @@ if (!orchestratorRes.ok) {
     setBlogData(prev =>
   prev ? { ...prev, blog: finalHtml } : prev
 );
+
+//  TRACK VALUE MOMENT
+gtag.event("content_generated", {
+  word_count: fullText.length,
+  keyword,
+  tone,
+});
 
 
 // Fetch content preview AFTER blog generation
