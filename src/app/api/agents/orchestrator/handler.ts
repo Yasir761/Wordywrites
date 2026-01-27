@@ -53,25 +53,54 @@ export async function orchestratorHandler({
   }
 
   //  Clerk user lookup (with fallback email)
-  let email = "system@wordywrites.ai";
-  try {
-    const user = await clerkClient.users.getUser(userId);
-    email = user?.emailAddresses?.[0]?.emailAddress || email;
-    console.log(` Clerk user found: ${email}`);
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : typeof err === "string" ? err : String(err);
-    console.warn(" Clerk lookup failed:", message);
-    console.log(" Using fallback email:", email);
-  }
+  // let email = "system@wordywrites.ai";
+  // try {
+  //   const user = await clerkClient.users.getUser(userId);
+  //   email = user?.emailAddresses?.[0]?.emailAddress || email;
+  //   console.log(` Clerk user found: ${email}`);
+  // } catch (err) {
+  //   const message =
+  //     err instanceof Error ? err.message : typeof err === "string" ? err : String(err);
+  //   console.warn(" Clerk lookup failed:", message);
+  //   console.log(" Using fallback email:", email);
+  // }
 
-  //  Ensure user record exists
-  await UserModel.findOneAndUpdate(
-    { email },
-    { userId, email },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
-  console.log(" User record ensured in DB");
+
+
+let email: string | undefined;
+
+try {
+  const clerkUser = await clerkClient.users.getUser(userId);
+  email = clerkUser?.emailAddresses?.[0]?.emailAddress;
+} catch (err) {
+  console.warn("Clerk lookup failed");
+}
+
+
+if (!email) {
+  email = `${userId}@fallback.wordywrites.ai`;
+}
+
+
+
+
+const userRecord = await UserModel.findOneAndUpdate(
+  { userId },
+  {
+    $setOnInsert: {
+      userId,
+      email,
+      plan: "Free",
+      credits: 5,
+    },
+  },
+  { upsert: true, new: true }
+);
+
+if (!userRecord) {
+  throw new Error("User creation failed at DB level");
+}
+
 
   //  Get plan (fallback to Pro for testing)
   const plan = await getUserPlan(userId).catch(() => ({
@@ -117,39 +146,107 @@ const jobId = Date.now(); // simple, works
   }
 }
   //  Agent call helper
+  // const callAgent = async (agent: keyof typeof AGENT_ENDPOINTS, body: any) => {
+  //   const coreAgents = ["analyze", "keyword", "tone", "hashtags", "blueprint", "seo"];
+
+  //   if (!plan.aiAgents.includes(agent) && !coreAgents.includes(agent))
+  //     throw { agent, status: 403, error: `Agent "${agent}" not allowed for ${plan.name}` };
+
+  //   const start = performance.now();
+  //   const res = await fetch(`${baseUrl}${AGENT_ENDPOINTS[agent]}`, {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify(body),
+  //   });
+  //   const json = await res.json();
+  //   if (!res.ok) throw { status: res.status, agent, error: json };
+
+  //   console.log(` ${agent} generated in ${(performance.now() - start).toFixed(1)}ms`);
+  //   return json;
+  // };
+
+
+
   const callAgent = async (agent: keyof typeof AGENT_ENDPOINTS, body: any) => {
-    if (!plan.aiAgents.includes(agent))
-      throw { agent, status: 403, error: `Agent "${agent}" not allowed for ${plan.name}` };
+  const res = await fetch(`${baseUrl}${AGENT_ENDPOINTS[agent]}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
-    const start = performance.now();
-    const res = await fetch(`${baseUrl}${AGENT_ENDPOINTS[agent]}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const json = await res.json();
-    if (!res.ok) throw { status: res.status, agent, error: json };
+  const json = await res.json();
+  if (!res.ok) throw { status: res.status, agent, error: json };
 
-    console.log(` ${agent} generated in ${(performance.now() - start).toFixed(1)}ms`);
-    return json;
-  };
+  return json;
+};
+
+
+
+const safeAgent = async (agent: keyof typeof AGENT_ENDPOINTS, body: any) => {
+  try {
+    return await callAgent(agent, body);
+  } catch (err) {
+    console.error(` Agent ${agent} failed`, err);
+
+    // Fallbacks so orchestrator NEVER crashes
+    switch (agent) {
+      case "seo":
+        return {
+          optimized_title: "",
+          meta_description: "",
+          final_hashtags: [],
+        };
+
+      case "blueprint":
+        return { outline: [] };
+
+      case "tone":
+        return { tone: "Informative", voice: "Professional" };
+
+      case "hashtags":
+        return { tags: [] };
+
+      case "keyword":
+        return { intent: "informational" };
+
+      case "analyze":
+        return {};
+
+      default:
+        return {};
+    }
+  }
+};
 
 
 
   //  Cache retrieval or regeneration
+  // async function getOrGenerate(
+  //   idx: number,
+  //   agent: keyof typeof AGENT_ENDPOINTS,
+  //   body: any
+  // ) {
+  //   if (cached[idx]) {
+  //     cacheStatus[agent] = " CACHE HIT";
+  //     return  JSON.parse(JSON.stringify(cached[idx]));
+  //   }
+  //   cacheStatus[agent] = " MISS → generating";
+  //   return await callAgent(agent, body);
+  // }
+
   async function getOrGenerate(
-    idx: number,
-    agent: keyof typeof AGENT_ENDPOINTS,
-    body: any
-  ) {
-    if (cached[idx]) {
-      cacheStatus[agent] = " CACHE HIT";
-      return  JSON.parse(JSON.stringify(cached[idx]));
-    }
-    cacheStatus[agent] = " MISS → generating";
-    return await callAgent(agent, body);
+  idx: number,
+  agent: keyof typeof AGENT_ENDPOINTS,
+  body: any
+) {
+  if (cached[idx]) {
+    cacheStatus[agent] = "CACHE HIT";
+    return JSON.parse(JSON.stringify(cached[idx]));
   }
 
+  cacheStatus[agent] = "MISS → generating";
+  return await safeAgent(agent, body); //  changed here
+}
   //  Parallel agent orchestration
   const [analyze, keywordData] = await Promise.all([
     getOrGenerate(0, "analyze", { keyword }),
@@ -188,7 +285,8 @@ const blog = {
 };
 
 
-  const crawl = crawlUrl ? await callAgent("crawl", { url: crawlUrl }) : null;
+const crawl = crawlUrl ? await safeAgent("crawl", { url: crawlUrl }) : null;
+
 
   //  Cache all new results
   const newEntries: Array<[string, any, number]> = [];
