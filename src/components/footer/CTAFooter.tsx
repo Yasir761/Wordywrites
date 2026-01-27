@@ -54,19 +54,18 @@ export default function CTAAndFooter() {
 
   const socialLinks = [
     { icon: X, href: 'https://x.com/Mohd_Yasir29', label: 'Twitter' },
-   
     { icon: Globe, href: 'https://codilad.dev', label: 'Website' },
   ]
 
   return (
-    <footer className="mt-24 pb-24 sm:pb-0">
+    <footer className="pb-24 sm:pb-0">
       {/* CTA Section */}
       <motion.section
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
         viewport={{ once: true }}
-        className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8"
+        className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white"
       >
         <div className="max-w-5xl mx-auto">
           <div className="relative rounded-3xl lg:rounded-4xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 shadow-2xl">
@@ -139,7 +138,7 @@ export default function CTAAndFooter() {
       </motion.section>
 
       {/* Footer Section */}
-      <div className="border-t border-gray-200 bg-gradient-to-b from-white via-gray-50 to-white py-16 sm:py-20 px-4 sm:px-6 lg:px-8 mt-12 sm:mt-16">
+      <div className="bg-white py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Footer Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 sm:gap-12 mb-12 sm:mb-16">
@@ -211,7 +210,6 @@ export default function CTAAndFooter() {
                     <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </Link>
                 </motion.div>
-             
               </div>
             </motion.div>
 
@@ -251,9 +249,6 @@ export default function CTAAndFooter() {
             </motion.div>
           </div>
 
-          {/* Divider */}
-          <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-8" />
-
           {/* Social Links + Copyright */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -263,33 +258,32 @@ export default function CTAAndFooter() {
             className="flex flex-col sm:flex-row items-center justify-between gap-6"
           >
             {/* Social Icons */}
-            <div className="flex items-center gap-4 ">
-  {socialLinks.map((social, i) => {
-    const Icon = social.icon
-    return (
-      <motion.div
-        key={i}
-        whileHover={{ scale: 1.1 }}
-        transition={{ type: "spring", stiffness: 300 }}
-      >
-        <Link
-          href={social.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-gray-600 hover:text-indigo-600 transition-colors duration-300"
-          aria-label={social.label}
-        >
-          <Icon className="w-5 h-5" />
-        </Link>
-      </motion.div>
-    )
-  })}
-</div>
-
+            <div className="flex items-center gap-4">
+              {socialLinks.map((social, i) => {
+                const Icon = social.icon
+                return (
+                  <motion.div
+                    key={i}
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Link
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-600 hover:text-indigo-600 transition-colors duration-300"
+                      aria-label={social.label}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </Link>
+                  </motion.div>
+                )
+              })}
+            </div>
 
             {/* Copyright Text */}
             <div className="text-center sm:text-right text-xs sm:text-sm text-gray-500">
-              <p>All rights reserved. Found and developed by <span className="font-semibold text-gray-700"><a href="http://codilad.dev">Codilad</a></span></p>
+              <p>All rights reserved. Found and developed by <span className="font-semibold text-gray-700"><a href="https://codilad.dev">Codilad</a></span></p>
             </div>
           </motion.div>
         </div>

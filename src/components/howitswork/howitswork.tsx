@@ -22,58 +22,65 @@ import {
 
 const howItWorksSteps = [
   {
-    title: 'Keyword Agent',
-    summary: 'Understands your audience in seconds — used in 1,200+ live blogs.',
+    title: 'Enter Your Keyword',
+    summary: 'Start with a topic you want to rank for.',
     description:
-      'The Keyword Agent analyzes your target keyword to uncover search intent, ranking difficulty, and related phrases. It\'s the strategic brain behind every blog we create.',
+      'Type a keyword or topic and WordyWrites analyzes search intent, competition, and what your blog needs to compete on Google.',
     gradient: 'from-[#e0f2fe] via-[#e0e7ff] to-[#ede9fe]',
     delay: 0.1,
     icon: TrendingUp,
   },
   {
-    title: 'SEO Agent',
-    summary: 'Optimizes for over 50 ranking factors — automatically.',
+    title: 'SEO Structure Is Built',
+    summary: 'Headings, outline, and strategy are handled automatically.',
     description:
-      'The SEO Agent ensures your blog is structured, tagged, and keyword-optimized for maximum visibility. From meta descriptions to headline scoring, it\'s like having an SEO consultant built in.',
+      'We generate a structured outline with optimized headings and flow based on what already ranks — so your article follows a proven structure.',
     gradient: 'from-[#fef3c7] via-[#fcd34d] to-[#fca5a5]',
     delay: 0.15,
     icon: Sparkles,
   },
   {
-    title: 'Outline Agent',
-    summary: 'Creates clean, high-converting blog blueprints.',
+    title: 'Full Blog Is Written',
+    summary: 'Readable, natural content — not robotic AI text.',
     description:
-      'The Outline Agent turns your keyword and tone into a strategic structure with H2s, H3s, CTAs, and internal linking cues — before a single word is written.',
+      'Your article is written in your chosen tone and audience style, ensuring clarity, engagement, and SEO-friendly formatting without keyword stuffing.',
     gradient: 'from-[#ede9fe] via-[#d8b4fe] to-[#f0abfc]',
     delay: 0.2,
     icon: FileText,
   },
   {
-    title: 'Blog Writing Agent',
-    summary: 'Writes & refines — ready to publish in minutes.',
+    title: 'Content Is Refined',
+    summary: 'Grammar, tone, and flow are polished automatically.',
     description:
-      'Combining human-like creativity with data-driven optimization, the Blog Writing Agent produces complete, SEO-ready articles. The built-in Editor Agent then polishes grammar, tone, and flow.',
+      'The draft is improved and formatted so it reads like a finished article — not something that needs heavy editing.',
     gradient: 'from-[#d1fae5] via-[#a7f3d0] to-[#99f6e4]',
     delay: 0.25,
     icon: PenLine,
   },
   {
     title: 'Publish Anywhere',
-    summary: 'Export to WordPress, Copy to Medium or anywhere you want.',
+    summary: 'Go live in minutes.',
     description:
-      'Once approved, your content is ready for one-click export as HTML, PDF, or Wordpress — so you can go live faster and keep your publishing workflow smooth.',
+      'Export to WordPress, copy formatted HTML, or download as PDF. Your blog is ready to publish without reformatting or technical steps.',
     gradient: 'from-[#e0f2fe] via-[#c7d2fe] to-[#fce7f3]',
     delay: 0.3,
     icon: Upload,
   },
 ]
 
+
 export function HowItWorks() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [showVideo, setShowVideo] = useState(false)
 
   return (
-    <section className="py-24 scroll-mt-24" id="how-it-works">
+    <section
+  className="
+    py-24 scroll-mt-24
+    bg-gradient-to-b from-white via-indigo-50/10 to-white
+  "
+  id="how-it-works"
+>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
         <div className="text-center mb-10">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
