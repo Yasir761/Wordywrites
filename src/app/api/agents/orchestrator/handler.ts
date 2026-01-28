@@ -72,13 +72,15 @@ if (!email) {
 
 
 const userRecord = await UserModel.findOneAndUpdate(
-  { userId },
+  { email }, // EMAIL is identity
   {
+    $set: { userId }, // always sync latest Clerk ID
     $setOnInsert: {
-      userId,
       email,
       plan: "Free",
       credits: 5,
+      blogsGeneratedThisMonth: 0,
+      lastBlogReset: new Date(),
     },
   },
   { upsert: true, new: true }

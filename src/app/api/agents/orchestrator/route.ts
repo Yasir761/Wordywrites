@@ -89,16 +89,15 @@ export async function POST(req: NextRequest) {
       if (!keyword) return NextResponse.json({ error: "Missing keyword" }, { status: 400 });
 
       //  GET OR CREATE USER
-      let user = await UserModel.findOne({ userId });
+     let user = await UserModel.findOne({ userId });
 
-      if (!user) {
-        user = await UserModel.create({
-          userId,
-          email: `${userId}@fallback.wordywrites.ai`,
-          plan: "Free",
-          credits: 5,
-        });
-      }
+if (!user) {
+  return NextResponse.json(
+    { error: "User sync failed. Try logging out and back in." },
+    { status: 500 }
+  );
+}
+
 
       //  MONTHLY CREDIT RESET
 const now = new Date();
