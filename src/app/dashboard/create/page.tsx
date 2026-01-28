@@ -386,25 +386,25 @@ if (previewRes.ok) {
               </div>
 
               {/** SEO TITLE */}
-              <FeatureLock isLocked={userPlan === "Free"}>
+              {/* <FeatureLock isLocked={userPlan === "Free"}> */}
                 <div className="gen-card">
                   <h3 className="gen-label text-blue-600">SEO Title</h3>
                   <p className="gen-value">{blogData.seo?.optimized_title}</p>
                 </div>
-              </FeatureLock>
+              {/* </FeatureLock> */}
 
               {/** META */}
-              <FeatureLock isLocked={userPlan === "Free"}>
+              {/* <FeatureLock isLocked={userPlan === "Free"}> */}
                 <div className="gen-card">
                   <h3 className="gen-label text-emerald-600">Meta Description</h3>
                   <p className="text-[15px] text-muted-foreground leading-relaxed">
                     {blogData.seo?.meta_description}
                   </p>
                 </div>
-              </FeatureLock>
+              {/* </FeatureLock> */}
 
               {/** HASHTAGS */}
-              <FeatureLock isLocked={userPlan === "Free"}>
+              {/* <FeatureLock isLocked={userPlan === "Free"}> */}
                 <div className="gen-card">
                   <h3 className="gen-label text-pink-600 mb-3">Hashtags</h3>
                   <div className="flex flex-wrap gap-2">
@@ -415,7 +415,7 @@ if (previewRes.ok) {
                     ))}
                   </div>
                 </div>
-              </FeatureLock>
+              {/* </FeatureLock> */}
 
               {/** EDITOR */}
              <div className="gen-card p-10">
@@ -442,17 +442,17 @@ if (previewRes.ok) {
 
               {/** TEASERS */}
               {blogData.contentpreview && (
-                <FeatureLock isLocked={userPlan === "Free"}>
+                // <FeatureLock isLocked={userPlan === "Free"}>
                   <TeaserSection
                     teasers={blogData.contentpreview.teasers}
                     hashtags={blogData.contentpreview.hashtags}
                     engagementCTA={blogData.contentpreview.engagementCTA}
                   />
-                </FeatureLock>
+                // </FeatureLock>
               )}
 
               {/* ACTIONS */}
-              <div className="flex justify-center gap-4">
+              {/* <div className="flex justify-center gap-4">
                 <button
                   onClick={() => { setBlogData(null); setStep("input");  }}
                   className="px-6 py-3 rounded-xl font-medium border border-border bg-secondary text-foreground hover:bg-secondary/80 transition-all"
@@ -468,7 +468,33 @@ if (previewRes.ok) {
                     Publish Blog
                   </button>
                 </FeatureLock>
-              </div>
+              </div> */}
+
+              <div className="flex justify-center gap-4">
+  <button
+    onClick={() => { setBlogData(null); setStep("input"); }}
+    className="px-6 py-3 rounded-xl font-medium border border-border bg-secondary text-foreground hover:bg-secondary/80 transition-all"
+  >
+    Generate New
+  </button>
+
+  {userPlan === "Free" ? (
+    <button
+      onClick={() => router.push("/pricing")}
+      className="px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg hover:brightness-110 transition-all"
+    >
+      Upgrade to Publish 🚀
+    </button>
+  ) : (
+    <button
+      onClick={() => router.push("/dashboard/wordpress")}
+      className="px-6 py-3 rounded-xl font-semibold bg-primary text-white shadow-lg hover:brightness-110 transition-all"
+    >
+      Publish Blog
+    </button>
+  )}
+</div>
+
             </div>
           )}
         </div>
