@@ -52,20 +52,7 @@ export async function orchestratorHandler({
     }
   }
 
-  //  Clerk user lookup (with fallback email)
-  // let email = "system@wordywrites.ai";
-  // try {
-  //   const user = await clerkClient.users.getUser(userId);
-  //   email = user?.emailAddresses?.[0]?.emailAddress || email;
-  //   console.log(` Clerk user found: ${email}`);
-  // } catch (err) {
-  //   const message =
-  //     err instanceof Error ? err.message : typeof err === "string" ? err : String(err);
-  //   console.warn(" Clerk lookup failed:", message);
-  //   console.log(" Using fallback email:", email);
-  // }
-
-
+ 
 
 let email: string | undefined;
 

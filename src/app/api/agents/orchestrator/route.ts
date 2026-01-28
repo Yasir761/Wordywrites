@@ -1,4 +1,5 @@
 
+
 // import { NextRequest, NextResponse } from "next/server";
 // import { orchestratorHandler } from "./handler";
 // import { auth } from "@clerk/nextjs/server";
@@ -7,95 +8,62 @@
 // import * as Sentry from "@sentry/nextjs";
 
 
+
 // export async function POST(req: NextRequest) {
-//   return await Sentry.startSpan(
-//     { name: "Orchestrator API", op: "api.post" },
-//     async () => {
-//       try {
-//         const { userId } = await auth();
-//         Sentry.addBreadcrumb({
-//   category: "auth",
-//   message: "Auth result",
-//   level: "info",
-//   data: { userId },
-// });
+//   return await Sentry.startSpan({ name: "Orchestrator API", op: "api.post" }, async () => {
+//     try {
+//       const { userId } = await auth();
+//       if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-//         if (!userId) {
-//           return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//         }
+//       Sentry.setUser({ id: userId });
+//       await connectDB();
 
-//         Sentry.setUser({ id: userId });
+//       const body = await req.json();
+//       const { keyword, crawlUrl } = body;
 
-//         await connectDB();
-
-//         let body;
-//         try {
-//           body = await req.json();
-//         } catch {
-//           return NextResponse.json(
-//             { error: "Invalid JSON body" },
-//             { status: 400 }
-//           );
-//         }
-
-//         const { keyword, crawlUrl } = body;
-
-//         if (!keyword) {
-//           return NextResponse.json(
-//             { error: "Missing keyword" },
-//             { status: 400 }
-//           );
-//         }
-
-//         const user = await UserModel.findOne({ userId });
-//         if (!user) {
-//           return NextResponse.json({ error: "User not found" }, { status: 404 });
-//         }
-
-//     let creditsLeft = user.credits;
-
-// if (user.plan === "Free") {
-//   if (user.credits <= 0) {
-//     return NextResponse.json(
-//       { error: "You are out of free credits. Upgrade to continue." },
-//       { status: 402 }
-//     );
-//   }
-
-//   user.credits -= 1;
-//   await user.save();
-//   creditsLeft = user.credits;
-// }
-
-        
-
-//         const result = await orchestratorHandler({ userId, keyword, crawlUrl });
-
-//         if (!result || typeof result !== "object" || !("blogId" in result)) {
-//           throw new Error("Orchestrator returned invalid result");
-//         }
-
-//         Sentry.addBreadcrumb({
-//           category: "orchestrator",
-//           message: "Orchestrator completed successfully",
-//           level: "info",
-//           data: { keyword, blogId: result.blogId },
-//         });
-
-//         return NextResponse.json(
-//           JSON.parse(JSON.stringify(result))
-//         );
-//       } catch (err) {
-//         Sentry.captureException(err);
-//         const message = err instanceof Error ? err.message : String(err);
-
-//         return NextResponse.json(
-//           { error: message || "Internal server error" },
-//           { status: 500 }
-//         );
+//       if (!keyword) {
+//         return NextResponse.json({ error: "Missing keyword" }, { status: 400 });
 //       }
+
+//       //  RUN ORCHESTRATOR (creates user if needed)
+//       const result = await orchestratorHandler({ userId, keyword, crawlUrl });
+
+//       if (!result || typeof result !== "object" || !("blogId" in result)) {
+//         throw new Error("Orchestrator returned invalid result");
+//       }
+
+//       //  NOW GET REAL USER
+//       const user = await UserModel.findOne({ userId });
+//       if (!user) throw new Error("User creation failed");
+
+//       //  CREDIT SYSTEM
+//       let creditsLeft = user.credits;
+
+//       if (user.plan === "Free") {
+//         if (creditsLeft <= 0) {
+//           return NextResponse.json(
+//             { error: "You are out of free credits. Upgrade to continue." },
+//             { status: 402 }
+//           );
+//         }
+
+//         user.credits -= 1;
+//         await user.save();
+//         creditsLeft = user.credits;
+//       }
+
+//       //  RESPONSE
+//       return NextResponse.json({
+//         ...JSON.parse(JSON.stringify(result)),
+//         remainingCredits: creditsLeft,
+//       });
+
+//     } catch (err) {
+//       console.error("ORCHESTRATOR ROUTE ERROR:", err);
+//   const message = err instanceof Error ? err.message : String(err);
+//   return NextResponse.json({ error: message }, { status: 500 });
 //     }
-//   );
+//   });
 // }
 
 
@@ -107,87 +75,8 @@ import { orchestratorHandler } from "./handler";
 import { auth } from "@clerk/nextjs/server";
 import { UserModel } from "@/app/models/user";
 import { connectDB } from "../../utils/db";
+import { getUserPlan } from "@/app/api/utils/planUtils";
 import * as Sentry from "@sentry/nextjs";
-
-// export async function POST(req: NextRequest) {
-//   return await Sentry.startSpan(
-//     { name: "Orchestrator API", op: "api.post" },
-//     async () => {
-//       try {
-//         const { userId } = await auth();
-
-//         if (!userId) {
-//           return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//         }
-
-//         Sentry.setUser({ id: userId });
-
-//         await connectDB();
-
-//         const body = await req.json();
-//         const { keyword, crawlUrl } = body;
-
-//         if (!keyword) {
-//           return NextResponse.json({ error: "Missing keyword" }, { status: 400 });
-//         }
-
-//       let user = await UserModel.findOne({ userId });
-
-// if (!user) {
-//   // Let handler create user properly with Clerk email sync
-//   console.log("User not found in route, will be created in handler");
-//   user = { plan: "Free", credits: 5 }; // temporary shell for credit logic
-// }
-
-       
-//         // CREDIT LOGIC (FIXED)
-       
-//         let creditsLeft = user.credits;
-
-//         if (user.plan === "Free") {
-//           if (user.credits <= 0) {
-//             return NextResponse.json(
-//               { error: "You are out of free credits. Upgrade to continue." },
-//               { status: 402 }
-//             );
-//           }
-
-//           user.credits -= 1;
-//           await user.save();
-//           creditsLeft = user.credits;
-//         }
-
-        
-//         // RUN ORCHESTRATOR
-        
-//         const result = await orchestratorHandler({ userId, keyword, crawlUrl });
-
-//         if (!result || typeof result !== "object" || !("blogId" in result)) {
-//           throw new Error("Orchestrator returned invalid result");
-//         }
-
-        
-//         // FINAL RESPONSE
-        
-//         return NextResponse.json({
-//           ...JSON.parse(JSON.stringify(result)),
-//           remainingCredits: creditsLeft, 
-//         });
-
-//       } catch (err) {
-//         Sentry.captureException(err);
-//         const message = err instanceof Error ? err.message : String(err);
-
-//         return NextResponse.json(
-//           { error: message || "Internal server error" },
-//           { status: 500 }
-//         );
-//       }
-//     }
-//   );
-// }
-
-
 
 export async function POST(req: NextRequest) {
   return await Sentry.startSpan({ name: "Orchestrator API", op: "api.post" }, async () => {
@@ -195,28 +84,42 @@ export async function POST(req: NextRequest) {
       const { userId } = await auth();
       if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-      Sentry.setUser({ id: userId });
       await connectDB();
+      const { keyword, crawlUrl } = await req.json();
+      if (!keyword) return NextResponse.json({ error: "Missing keyword" }, { status: 400 });
 
-      const body = await req.json();
-      const { keyword, crawlUrl } = body;
+      //  GET OR CREATE USER
+      let user = await UserModel.findOne({ userId });
 
-      if (!keyword) {
-        return NextResponse.json({ error: "Missing keyword" }, { status: 400 });
+      if (!user) {
+        user = await UserModel.create({
+          userId,
+          email: `${userId}@fallback.wordywrites.ai`,
+          plan: "Free",
+          credits: 5,
+        });
       }
 
-      //  RUN ORCHESTRATOR (creates user if needed)
-      const result = await orchestratorHandler({ userId, keyword, crawlUrl });
+      //  MONTHLY CREDIT RESET
+const now = new Date();
+const reset = new Date(user.lastBlogReset);
 
-      if (!result || typeof result !== "object" || !("blogId" in result)) {
-        throw new Error("Orchestrator returned invalid result");
+if (now.getMonth() !== reset.getMonth() || now.getFullYear() !== reset.getFullYear()) {
+  user.credits = 5;
+  user.lastBlogReset = now;
+  await user.save();
+}
+
+
+      //  SYNC PLAN FROM BILLING
+      const billingPlan = await getUserPlan(userId).catch(() => ({ name: "Free" }));
+
+      if (user.plan !== billingPlan.name) {
+        user.plan = billingPlan.name;
+        await user.save();
       }
 
-      //  NOW GET REAL USER
-      const user = await UserModel.findOne({ userId });
-      if (!user) throw new Error("User creation failed");
-
-      //  CREDIT SYSTEM
+      //  CREDIT SYSTEM (BEFORE AI RUNS)
       let creditsLeft = user.credits;
 
       if (user.plan === "Free") {
@@ -232,16 +135,20 @@ export async function POST(req: NextRequest) {
         creditsLeft = user.credits;
       }
 
-      //  RESPONSE
+      //  RUN AI ORCHESTRATOR
+      const result = await orchestratorHandler({ userId, keyword, crawlUrl });
+
+      if (!result?.blogId) throw new Error("Orchestrator failed");
+
       return NextResponse.json({
-        ...JSON.parse(JSON.stringify(result)),
+        ...result,
         remainingCredits: creditsLeft,
       });
 
     } catch (err) {
       console.error("ORCHESTRATOR ROUTE ERROR:", err);
-  const message = err instanceof Error ? err.message : String(err);
-  return NextResponse.json({ error: message }, { status: 500 });
+      const message = err instanceof Error ? err.message : String(err);
+      return NextResponse.json({ error: message }, { status: 500 });
     }
   });
 }
